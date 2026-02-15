@@ -10,6 +10,49 @@ Tickr is a terminal-based time tracker with a TUI and a small CLI for quick data
 - CLI commands to add projects, tasks, and categories
 - SQLite storage with automatic migrations
 
+## Install
+
+### From GitHub Releases
+
+Quick install (Linux/macOS):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/loknopf/Tickr/main/scripts/install.sh | sh
+```
+
+Quick install (Windows PowerShell):
+
+```powershell
+irm https://raw.githubusercontent.com/loknopf/Tickr/main/scripts/install.ps1 | iex
+```
+
+Manual install:
+
+1. Download the latest archive for your OS/CPU from the Releases page.
+2. Extract the archive and place `tickr` (or `tickr.exe` on Windows) somewhere in your `PATH`.
+3. Verify with:
+
+```bash
+tickr --help
+```
+
+### Build from source
+
+```bash
+cargo install --path .
+```
+
+## Release (maintainers)
+
+Releases are built by GitHub Actions when you push a version tag:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The workflow builds Linux, macOS, and Windows binaries and uploads them to the GitHub release.
+
 ## Usage
 
 Run the TUI:
