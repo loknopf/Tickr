@@ -2,7 +2,7 @@ param(
     [string]$Repo = "loknopf/Tickr",
     [string]$Version = "latest",
     [string]$BinDir = "$env:LOCALAPPDATA\Tickr\bin",
-    [switch]$AddToPath
+    [switch]$AddToPath = $true
 )
 
 Set-StrictMode -Version Latest
@@ -57,6 +57,8 @@ if ($AddToPath) {
 }
 
 Write-Host "Installed tickr to $BinDir"
-if (-not $AddToPath) {
+if ($AddToPath) {
+    Write-Host "PATH updated for current user. Restart your shell."
+} else {
     Write-Host "Add $BinDir to PATH or re-run with -AddToPath."
 }

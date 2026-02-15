@@ -17,7 +17,7 @@ Tickr is a terminal-based time tracker with a TUI and a small CLI for quick data
 Quick install (Linux/macOS):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/loknopf/Tickr/main/scripts/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/loknopf/Tickr/main/scripts/install.sh | bash
 ```
 
 Quick install (Windows PowerShell):
@@ -25,6 +25,9 @@ Quick install (Windows PowerShell):
 ```powershell
 irm https://raw.githubusercontent.com/loknopf/Tickr/main/scripts/install.ps1 | iex
 ```
+
+Both installers add the install directory to your PATH by default. Use `--no-add-to-path`
+for the shell script or `-AddToPath:$false` for PowerShell to opt out.
 
 Manual install:
 

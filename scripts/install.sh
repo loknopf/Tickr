@@ -1,18 +1,21 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 set -euo pipefail
 
 REPO="loknopf/Tickr"
 VERSION="latest"
 BIN_DIR=""
+ADD_TO_PATH="true"
 
 usage() {
     cat <<'EOF'
-Usage: install.sh [-r owner/repo] [-v version] [-b bin_dir]
+Usage: install.sh [-r owner/repo] [-v version] [-b bin_dir] [--add-to-path|--no-add-to-path]
 
 Options:
   -r, --repo      GitHub repo (default: loknopf/Tickr)
   -v, --version   Version (default: latest)
   -b, --bin-dir   Install directory (default: ~/.local/bin or /usr/local/bin)
+            --add-to-path     Add bin dir to shell rc files (default: true)
+            --no-add-to-path  Do not modify shell rc files
 EOF
 }
 
@@ -29,6 +32,14 @@ while [ $# -gt 0 ]; do
         -b|--bin-dir)
             BIN_DIR="$2"
             shift 2
+            ;;
+        --add-to-path)
+            ADD_TO_PATH="true"
+            shift 1
+            ;;
+        --no-add-to-path)
+            ADD_TO_PATH="false"
+            shift 1
             ;;
         -h|--help)
             usage
@@ -127,3 +138,31 @@ else
 fi
 
 echo "Installed tickr to $BIN_DIR/tickr"
+
+if [ "$ADD_TO_PATH" = "true" ]; then
+    ADDED="false"
+    if [ -n "${BASH_VERSION:-}" ]; then
+        RC_FILE="$HOME/.bashrc"
+        if ! grep -qs "$BIN_DIR" "$RC_FILE" 2>/dev/null; then
+            printf '\nexport PATH="%s:$PATH"\n' "$BIN_DIR" >> "$RC_FILE"
+            ADDED="true"
+        fi
+    fi
+
+    if [ -n "${ZSH_VERSION:-}" ]; then
+        RC_FILE="$HOME/.zshrc"
+        if ! grep -qs "$BIN_DIR" "$RC_FILE" 2>/dev/null; then
+            printf '\nexport PATH="%s:$PATH"\n' "$BIN_DIR" >> "$RC_FILE"
+            ADDED="true"
+        fi
+    fi
+
+    if [ "$ADDED" = "true" ]; then
+        echo "Added $BIN_DIR to your PATH in shell rc file(s). Restart your shell."
+    else
+        echo "PATH already includes $BIN_DIR or no supported shell detected."
+        echo "Add it manually if needed: export PATH=\"$BIN_DIR:$PATH\""
+    fi
+else
+    echo "Add $BIN_DIR to PATH or re-run with --add-to-path."
+fi
