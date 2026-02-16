@@ -37,6 +37,10 @@ pub fn build_help_text(_app: &App) -> Text<'_> {
     ]));
 
     lines.push(Line::from(""));
+    lines.push(section_title("Projects"));
+    lines.extend(section_lines(&["/: Search projects"]));
+
+    lines.push(Line::from(""));
     lines.push(section_title("Tickrs"));
     lines.extend(section_lines(&[
         "space: Start/End task",

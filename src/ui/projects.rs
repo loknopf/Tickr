@@ -13,9 +13,32 @@ pub fn build_projects_text(app: &App) -> Text<'_> {
         return Text::from(status.as_str());
     }
     if app.projects.is_empty() {
-        return Text::from("No projects found. Press 'r' to refresh.");
+        if app.projects_search_query.trim().is_empty() {
+            return Text::from("No projects found. Press 'r' to refresh.");
+        }
+        return Text::from(format!(
+            "No projects match \"{}\".",
+            app.projects_search_query.trim()
+        ));
     }
     let mut lines = Vec::new();
+    let search_style = if app.projects_search_active {
+        Style::default()
+            .fg(Theme::highlight())
+            .add_modifier(Modifier::BOLD)
+    } else {
+        Style::default().fg(Theme::dim())
+    };
+    let search_value = if app.projects_search_query.trim().is_empty() {
+        "(none)"
+    } else {
+        app.projects_search_query.trim()
+    };
+    lines.push(Line::from(vec![
+        Span::styled("  Search: ", Style::default().fg(Theme::dim())),
+        Span::styled(search_value, search_style),
+    ]));
+    lines.push(Line::from(""));
     lines.push(Line::from(Span::styled(
         format!(
             "  {:<24} {:>8} {:>5} {:>5}",

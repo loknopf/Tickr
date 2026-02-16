@@ -14,6 +14,7 @@ pub use intervals::create_interval;
 pub use project::{
     check_project_exists, create_project, query_project, query_project_by_id,
     query_project_worked_on_today, query_project_worked_on_week, query_projects,
+    search_projects_by_name,
 };
 pub use tickr::{
     create_tickr, end_tickr, query_tickr, query_tickr_by_id, start_tickr, update_tickr_details,

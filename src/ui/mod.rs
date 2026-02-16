@@ -506,7 +506,7 @@ fn keybinds_lines(app: &App) -> Vec<Line<'static>> {
             "r: Refresh  ?: Help  q: Quit",
         ),
         AppView::Projects => (
-            "Up/Down: Select  Enter: Open  n: New task",
+            "Up/Down: Select  Enter: Open  n: New task  /: Search",
             "r: Refresh  ?: Help  q: Quit",
         ),
         AppView::Tickrs => (

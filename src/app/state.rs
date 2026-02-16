@@ -34,6 +34,8 @@ pub struct App {
     pub timeline_range: TimelineRange,
     pub focus_mode: FocusMode,
     pub selected_tab_index: usize,
+    pub projects_search_query: String,
+    pub projects_search_active: bool,
     pub edit_popup: Option<EditTickrPopup>,
     pub new_category_popup: Option<NewCategoryPopup>,
     pub new_tickr_popup: Option<NewTickrPopup>,
@@ -161,6 +163,8 @@ impl App {
             timeline_range: TimelineRange::Day,
             focus_mode: FocusMode::Content,
             selected_tab_index: 0,
+            projects_search_query: String::new(),
+            projects_search_active: false,
             edit_popup: None,
             new_category_popup: None,
             new_tickr_popup: None,
@@ -202,6 +206,10 @@ impl App {
             self.handle_new_tickr_key(key);
             return;
         }
+        if self.projects_search_active {
+            self.handle_projects_search_key(key);
+            return;
+        }
 
         match key {
             KeyCode::Char('q') => self.running = false,
@@ -237,6 +245,11 @@ impl App {
                     self.go_back();
                 } else {
                     self.navigate_to(AppView::Help);
+                }
+            }
+            KeyCode::Char('/') => {
+                if self.view == AppView::Projects {
+                    self.projects_search_active = true;
                 }
             }
             KeyCode::Tab => {
@@ -309,6 +322,9 @@ impl App {
         if self.view != view {
             self.view_history.push(self.view.clone());
             self.view = view;
+            if self.view != AppView::Projects {
+                self.projects_search_active = false;
+            }
             self.load_content_for_view();
             // Update selected_tab_index to match the current view
             if let Some(index) = TABS.iter().position(|v| {
@@ -548,7 +564,12 @@ impl App {
     }
 
     fn load_projects(&mut self) {
-        match db::query_projects(&self.db) {
+        let result = if self.projects_search_query.trim().is_empty() {
+            db::query_projects(&self.db)
+        } else {
+            db::search_projects_by_name(self.projects_search_query.trim(), &self.db)
+        };
+        match result {
             Ok(projects) => {
                 self.projects = projects;
                 self.clear_status();
@@ -560,6 +581,36 @@ impl App {
             Err(err) => {
                 self.status = Some(format!("Failed to load projects: {err}"));
             }
+        }
+    }
+
+    fn handle_projects_search_key(&mut self, key: KeyCode) {
+        if self.view != AppView::Projects {
+            self.projects_search_active = false;
+            return;
+        }
+        match key {
+            KeyCode::Esc => {
+                self.projects_search_active = false;
+                self.projects_search_query.clear();
+                self.load_projects();
+            }
+            KeyCode::Enter => {
+                self.projects_search_active = false;
+                self.load_projects();
+            }
+            KeyCode::Backspace | KeyCode::Delete => {
+                self.projects_search_query.pop();
+                self.load_projects();
+            }
+            KeyCode::Char(ch) => {
+                if ch.is_control() {
+                    return;
+                }
+                self.projects_search_query.push(ch);
+                self.load_projects();
+            }
+            _ => {}
         }
     }
 

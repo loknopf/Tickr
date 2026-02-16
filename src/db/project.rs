@@ -4,6 +4,7 @@ use chrono::DateTime;
 use chrono::Local;
 use rusqlite::Connection;
 
+use crate::types::ProjectId;
 use crate::types::{Project, ProjectQuery};
 
 pub fn create_project(arg: Project, conn: &Connection) -> Result<()> {
@@ -129,4 +130,31 @@ pub fn check_project_exists(name: &str, conn: &Connection) -> Result<bool> {
     let mut stmt = conn.prepare("SELECT COUNT(*) FROM projects WHERE name = ?1")?;
     let count: i64 = stmt.query_row([name], |row| row.get(0))?;
     Ok(count > 0)
+}
+
+pub fn search_projects_by_name(query: &str, conn: &Connection) -> Result<Vec<Project>> {
+    if query.trim().is_empty() {
+        return query_projects(conn);
+    }
+    let escaped = query
+        .replace('\\', "\\\\")
+        .replace('%', "\\%")
+        .replace('_', "\\_");
+
+    let mut stmt = conn.prepare("SELECT * FROM projects WHERE name LIKE ?1 ESCAPE '\\' ORDER BY name ASC")?;
+    let pattern = format!("%{}%", escaped);
+    let rows = stmt.query_map([pattern], |row| {
+        Ok(Project {
+            id: Some(row.get(0)?),
+            name: row.get(1)?,
+            created_at: DateTime::parse_from_rfc3339(&row.get::<_, String>(2)?)
+                .unwrap()
+                .with_timezone(&Local),
+        })
+    })?;
+    let mut projects = Vec::new();
+    for row in rows {
+        projects.push(row?);
+    }
+    Ok(projects)
 }
