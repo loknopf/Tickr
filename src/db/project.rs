@@ -4,7 +4,6 @@ use chrono::DateTime;
 use chrono::Local;
 use rusqlite::Connection;
 
-use crate::types::ProjectId;
 use crate::types::{Project, ProjectQuery};
 
 pub fn create_project(arg: Project, conn: &Connection) -> Result<()> {

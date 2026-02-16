@@ -47,6 +47,7 @@ pub fn build_help_text(_app: &App) -> Text<'_> {
         "s: Stop running task",
         "g: Go to project (detail)",
         "e: Edit task (detail)",
+        "d: Delete task",
     ]));
 
     lines.push(Line::from(""));
@@ -65,6 +66,7 @@ pub fn build_help_text(_app: &App) -> Text<'_> {
         "Edit task: Up/Down change category, Enter save, Esc cancel",
         "New category: Tab switch field, Enter save, Esc cancel",
         "New task: Tab switch field, Up/Down select, Space toggle start, Enter save, Esc cancel",
+        "Delete task: Enter/Y confirm, Esc/N cancel",
     ]));
 
     Text::from(lines)

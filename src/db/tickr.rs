@@ -173,3 +173,9 @@ pub fn update_tickr_details(
     )?;
     Ok(())
 }
+
+pub fn delete_tickr(id: TickrId, conn: &Connection) -> Result<()> {
+    conn.execute("DELETE FROM intervals WHERE entry_id = ?1", [id])?;
+    conn.execute("DELETE FROM entries WHERE id = ?1", [id])?;
+    Ok(())
+}

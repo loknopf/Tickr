@@ -158,7 +158,7 @@ pub fn build_tickr_detail_text(app: &App) -> Text<'_> {
 
     lines.push(Line::from(""));
     lines.push(Line::from(
-        "space: Start/End   s: Stop running   g: Project   e: Edit   esc: Back",
+        "space: Start/End   s: Stop running   g: Project   e: Edit   d: Delete   esc: Back",
     ));
     Text::from(lines)
 }

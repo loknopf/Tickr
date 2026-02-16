@@ -17,7 +17,8 @@ pub use project::{
     search_projects_by_name,
 };
 pub use tickr::{
-    create_tickr, end_tickr, query_tickr, query_tickr_by_id, start_tickr, update_tickr_details,
+    create_tickr, delete_tickr, end_tickr, query_tickr, query_tickr_by_id, start_tickr,
+    update_tickr_details,
 };
 
 /// Opens (or creates) the SQLite database and runs migrations.

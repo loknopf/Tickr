@@ -29,6 +29,11 @@ impl Theme {
         Color::Yellow
     }
 
+    /// Destructive/danger status
+    pub fn danger() -> Color {
+        Color::Red
+    }
+
     /// Error/ended status
     pub fn ended() -> Color {
         Color::Blue

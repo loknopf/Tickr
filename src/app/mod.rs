@@ -3,7 +3,8 @@ mod state;
 use crossterm::event::KeyCode;
 
 pub use state::{
-    App, CategoryField, EditTickrPopup, NewCategoryPopup, NewTickrField, NewTickrPopup,
+    App, CategoryField, DeleteTickrPopup, EditTickrPopup, NewCategoryPopup, NewTickrField,
+    NewTickrPopup,
 };
 
 /// Possible input events the app reacts to.

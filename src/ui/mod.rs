@@ -121,6 +121,9 @@ pub fn draw(frame: &mut Frame, app: &App) {
     if let Some(popup) = &app.new_tickr_popup {
         render_new_tickr_popup(frame, popup);
     }
+    if let Some(popup) = &app.delete_tickr_popup {
+        render_delete_tickr_popup(frame, popup);
+    }
 }
 
 fn render_edit_popup(frame: &mut Frame, popup: &crate::app::EditTickrPopup) {
@@ -392,6 +395,52 @@ fn render_new_tickr_popup(frame: &mut Frame, popup: &crate::app::NewTickrPopup) 
     frame.render_widget(popup_widget, area);
 }
 
+fn render_delete_tickr_popup(frame: &mut Frame, popup: &crate::app::DeleteTickrPopup) {
+    let area = centered_rect(60, 35, frame.area());
+    frame.render_widget(Clear, area);
+
+    let mut lines = Vec::new();
+    lines.push(Line::from(Span::styled(
+        "Delete task",
+        Style::default()
+            .fg(Theme::danger())
+            .add_modifier(Modifier::BOLD),
+    )));
+    lines.push(Line::from(""));
+    lines.push(Line::from(vec![
+        Span::styled("Task: ", Style::default().fg(Theme::dim())),
+        Span::styled(
+            popup.label.as_str(),
+            Style::default()
+                .fg(Theme::text())
+                .add_modifier(Modifier::BOLD),
+        ),
+    ]));
+    lines.push(Line::from(""));
+    lines.push(Line::from(Span::styled(
+        "This cannot be undone.",
+        Style::default()
+            .fg(Theme::danger())
+            .add_modifier(Modifier::BOLD),
+    )));
+    lines.push(Line::from(""));
+    lines.push(Line::from(Span::styled(
+        "Enter/Y: delete  Esc/N: cancel",
+        Style::default().fg(Theme::dim()),
+    )));
+
+    let popup_widget = Paragraph::new(Text::from(lines))
+        .alignment(Alignment::Left)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_type(BorderType::Rounded)
+                .style(Style::default().fg(Theme::danger()))
+                .title(" Delete "),
+        );
+    frame.render_widget(popup_widget, area);
+}
+
 fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
     let popup_layout = Layout::default()
         .direction(Direction::Vertical)
@@ -510,11 +559,11 @@ fn keybinds_lines(app: &App) -> Vec<Line<'static>> {
             "r: Refresh  ?: Help  q: Quit",
         ),
         AppView::Tickrs => (
-            "Up/Down: Select  Enter: Detail  space: Start/End",
+            "Up/Down: Select  Enter: Detail  space: Start/End  d: Delete",
             "r: Refresh  ?: Help  q: Quit",
         ),
         AppView::ProjectTickrs => (
-            "Up/Down: Select  Enter: Detail  space: Start/End  n: New task",
+            "Up/Down: Select  Enter: Detail  space: Start/End  n: New task  d: Delete",
             "esc: Back  r: Refresh  ?: Help  q: Quit",
         ),
         AppView::WorkedProjects => (
@@ -530,7 +579,7 @@ fn keybinds_lines(app: &App) -> Vec<Line<'static>> {
             "esc: Back  r: Refresh  ?: Help  q: Quit",
         ),
         AppView::TickrDetail => (
-            "space: Start/End  s: Stop  g: Project  e: Edit",
+            "space: Start/End  s: Stop  g: Project  e: Edit  d: Delete",
             "esc: Back  ?: Help  q: Quit",
         ),
         AppView::Help => (

@@ -39,6 +39,7 @@ pub struct App {
     pub edit_popup: Option<EditTickrPopup>,
     pub new_category_popup: Option<NewCategoryPopup>,
     pub new_tickr_popup: Option<NewTickrPopup>,
+    pub delete_tickr_popup: Option<DeleteTickrPopup>,
 }
 
 #[derive(Clone, Debug)]
@@ -60,6 +61,12 @@ pub struct EditTickrPopup {
     pub label: String,
     pub category_index: usize,
     pub categories: Vec<CategoryOption>,
+}
+
+#[derive(Clone, Debug)]
+pub struct DeleteTickrPopup {
+    pub tickr_id: TickrId,
+    pub label: String,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -168,6 +175,7 @@ impl App {
             edit_popup: None,
             new_category_popup: None,
             new_tickr_popup: None,
+            delete_tickr_popup: None,
         };
 
         // Initialize categories and project summaries
@@ -194,6 +202,10 @@ impl App {
     }
 
     fn handle_key(&mut self, key: KeyCode) {
+        if self.delete_tickr_popup.is_some() {
+            self.handle_delete_tickr_key(key);
+            return;
+        }
         if self.edit_popup.is_some() {
             self.handle_edit_key(key);
             return;
@@ -309,6 +321,7 @@ impl App {
             KeyCode::Char('g') => self.go_to_project_from_tickr(),
             KeyCode::Esc => self.go_back(),
             KeyCode::Char('e') => self.open_edit_popup(),
+            KeyCode::Char('d') => self.open_delete_tickr_popup(),
             KeyCode::Char('n') => match self.view {
                 AppView::Projects | AppView::ProjectTickrs => self.open_new_tickr_popup(),
                 AppView::Categories => self.open_new_category_popup(),
@@ -399,6 +412,17 @@ impl App {
                     popup.label.push(ch);
                 }
             }
+            _ => {}
+        }
+    }
+
+    fn handle_delete_tickr_key(&mut self, key: KeyCode) {
+        match key {
+            KeyCode::Esc | KeyCode::Char('n') => {
+                self.delete_tickr_popup = None;
+                self.clear_status();
+            }
+            KeyCode::Enter | KeyCode::Char('y') => self.apply_delete_tickr_popup(),
             _ => {}
         }
     }
@@ -869,6 +893,25 @@ impl App {
         });
     }
 
+    fn open_delete_tickr_popup(&mut self) {
+        if !matches!(self.view, AppView::Tickrs | AppView::ProjectTickrs | AppView::TickrDetail) {
+            return;
+        }
+        let Some(tickr) = self.current_tickr() else {
+            self.status = Some("No task selected.".to_string());
+            return;
+        };
+        let Some(tickr_id) = tickr.id else {
+            self.status = Some("Selected task has no id.".to_string());
+            return;
+        };
+
+        self.delete_tickr_popup = Some(DeleteTickrPopup {
+            tickr_id,
+            label: tickr.description.clone(),
+        });
+    }
+
     fn open_new_category_popup(&mut self) {
         if self.view != AppView::Categories {
             return;
@@ -1089,6 +1132,35 @@ impl App {
             AppView::Tickrs => self.load_tickrs(),
             _ => {}
         }
+    }
+
+    fn apply_delete_tickr_popup(&mut self) {
+        let Some(popup) = self.delete_tickr_popup.take() else {
+            return;
+        };
+
+        if let Err(err) = db::delete_tickr(popup.tickr_id, &self.db) {
+            self.status = Some(format!("Failed to delete task: {err}"));
+            self.delete_tickr_popup = Some(popup);
+            return;
+        }
+
+        if self.running_tickr == Some(popup.tickr_id) {
+            self.running_tickr = None;
+        }
+
+        self.refresh_project_summaries();
+        self.selected_tickr = None;
+        self.selected_tickr_project_name = None;
+
+        match self.view {
+            AppView::TickrDetail => self.go_back(),
+            AppView::Tickrs => self.load_tickrs(),
+            AppView::ProjectTickrs => self.load_project_tickrs(),
+            _ => self.refresh_view_data(),
+        }
+
+        self.status = Some("Task deleted.".to_string());
     }
 
     fn go_back(&mut self) {
