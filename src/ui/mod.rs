@@ -222,17 +222,34 @@ fn render_new_category_popup(frame: &mut Frame, popup: &crate::app::NewCategoryP
         Span::styled("Name: ", Style::default().fg(Theme::dim())),
         Span::styled(popup.name.as_str(), name_style),
     ]));
-    lines.push(Line::from(vec![
+    
+    // Color field with preview
+    let color_display = if popup.color.is_empty() {
+        "#RRGGBB"
+    } else {
+        popup.color.as_str()
+    };
+    
+    let mut color_line = vec![
         Span::styled("Color: ", Style::default().fg(Theme::dim())),
-        Span::styled(
-            if popup.color.is_empty() {
-                "#RRGGBB"
-            } else {
-                popup.color.as_str()
-            },
-            color_style,
-        ),
-    ]));
+        Span::styled(color_display, color_style),
+    ];
+    
+    // Add color preview if valid hex color
+    if let Some(preview_color) = hex_to_color(popup.color.as_str()) {
+        color_line.push(Span::raw("  "));
+        color_line.push(Span::styled(
+            "███",
+            Style::default().fg(preview_color),
+        ));
+        color_line.push(Span::raw(" "));
+        color_line.push(Span::styled(
+            "← Preview",
+            Style::default().fg(Theme::dim()),
+        ));
+    }
+    
+    lines.push(Line::from(color_line));
     lines.push(Line::from(""));
     lines.push(Line::from(Span::styled(
         "Type to edit. Tab: switch field. Enter: save. Esc: cancel.",
@@ -468,7 +485,7 @@ fn running_task_line(app: &App) -> Line<'_> {
         }
     }
 
-    let text = if let Some((tickr, interval)) = running {
+    if let Some((tickr, interval)) = running {
         let project_name = app
             .projects
             .iter()
@@ -476,20 +493,38 @@ fn running_task_line(app: &App) -> Line<'_> {
             .map(|project| project.name.as_str())
             .unwrap_or("Unknown project");
         let duration = format_duration(now.signed_duration_since(interval.start_time));
-        format!(
-            "{project_name} > {} > Running {duration}",
-            tickr.description
-        )
+        
+        // Animated indicator that cycles every second
+        let animation_chars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+        let anim_index = (now.timestamp() % animation_chars.len() as i64) as usize;
+        let indicator = animation_chars[anim_index];
+        
+        Line::from(vec![
+            Span::styled(
+                format!("{} ", indicator),
+                Style::default()
+                    .fg(Theme::active())
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                format!("{project_name} > {} > ", tickr.description),
+                Style::default()
+                    .fg(Theme::text())
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                format!("Running {duration}"),
+                Style::default()
+                    .fg(Theme::active())
+                    .add_modifier(Modifier::BOLD),
+            ),
+        ])
     } else {
-        "No task running".to_string()
-    };
-
-    Line::from(Span::styled(
-        text,
-        Style::default()
-            .fg(Theme::active())
-            .add_modifier(Modifier::BOLD),
-    ))
+        Line::from(Span::styled(
+            "● No task running",
+            Style::default().fg(Theme::dim()),
+        ))
+    }
 }
 
 fn keybinds_lines(app: &App) -> Vec<Line<'static>> {
@@ -505,15 +540,15 @@ fn keybinds_lines(app: &App) -> Vec<Line<'static>> {
             "r: Refresh  ?: Help  q: Quit",
         ),
         AppView::Projects => (
-            "Up/Down: Select  Enter: Open  n: New task",
+            "Up/Down: Select  Enter: Open  n: New task  /: Search",
             "r: Refresh  ?: Help  q: Quit",
         ),
         AppView::Tickrs => (
-            "Up/Down: Select  Enter: Detail  space: Start/End",
+            "Up/Down: Select  Enter: Detail  space: Start/End  /: Search",
             "r: Refresh  ?: Help  q: Quit",
         ),
         AppView::ProjectTickrs => (
-            "Up/Down: Select  Enter: Detail  space: Start/End  n: New task",
+            "Up/Down: Select  Enter: Detail  space: Start/End  n: New task  /: Search",
             "esc: Back  r: Refresh  ?: Help  q: Quit",
         ),
         AppView::WorkedProjects => (

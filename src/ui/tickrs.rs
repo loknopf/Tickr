@@ -9,14 +9,50 @@ use super::theme::Theme;
 use crate::app::App;
 
 pub fn build_tickrs_text(app: &App, show_selection: bool) -> Text<'_> {
+    let mut lines = Vec::new();
+    
+    // Show search bar if active
+    if app.search_active {
+        lines.push(Line::from(vec![
+            Span::styled("Search: ", Style::default().fg(Theme::highlight()).add_modifier(Modifier::BOLD)),
+            Span::styled(&app.search_filter, Style::default().fg(Theme::text())),
+            Span::styled("_", Style::default().fg(Theme::highlight())),
+        ]));
+        lines.push(Line::from(Span::styled(
+            "Type to search, Enter to apply, Esc to cancel",
+            Style::default().fg(Theme::dim()),
+        )));
+        lines.push(Line::from(""));
+    } else if !app.search_filter.is_empty() {
+        lines.push(Line::from(vec![
+            Span::styled("Filtered: ", Style::default().fg(Theme::accent())),
+            Span::styled(&app.search_filter, Style::default().fg(Theme::text())),
+            Span::styled(" (press / to edit, Esc to clear)", Style::default().fg(Theme::dim())),
+        ]));
+        lines.push(Line::from(""));
+    }
+    
     if let Some(status) = &app.status {
-        return Text::from(status.as_str());
+        lines.push(Line::from(status.as_str()));
+        return Text::from(lines);
     }
-    if app.tickrs.is_empty() {
-        return Text::from("No tickrs found. Press 'r' to refresh.");
+    
+    let tickrs_to_display = app.filtered_tickrs();
+    
+    if tickrs_to_display.is_empty() {
+        if app.search_filter.is_empty() {
+            lines.push(Line::from("No tickrs found. Press 'r' to refresh."));
+        } else {
+            lines.push(Line::from(vec![
+                Span::styled("No tasks match '", Style::default().fg(Theme::dim())),
+                Span::styled(&app.search_filter, Style::default().fg(Theme::text())),
+                Span::styled("'. Press Esc to clear filter.", Style::default().fg(Theme::dim())),
+            ]));
+        }
+        return Text::from(lines);
     }
-    let lines = app
-        .tickrs
+    
+    let tickr_lines = tickrs_to_display
         .iter()
         .enumerate()
         .map(|(index, tickr)| {
@@ -65,5 +101,7 @@ pub fn build_tickrs_text(app: &App, show_selection: bool) -> Text<'_> {
             Line::from(spans)
         })
         .collect::<Vec<_>>();
+    
+    lines.extend(tickr_lines);
     Text::from(lines)
 }

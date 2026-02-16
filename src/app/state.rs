@@ -37,6 +37,8 @@ pub struct App {
     pub new_category_popup: Option<NewCategoryPopup>,
     pub new_tickr_popup: Option<NewTickrPopup>,
     pub confirm_popup: Option<ConfirmPopup>,
+    pub search_filter: String,
+    pub search_active: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -177,6 +179,8 @@ impl App {
             new_category_popup: None,
             new_tickr_popup: None,
             confirm_popup: None,
+            search_filter: String::new(),
+            search_active: false,
         };
 
         // Initialize categories and project summaries
@@ -203,6 +207,10 @@ impl App {
     }
 
     fn handle_key(&mut self, key: KeyCode) {
+        if self.search_active {
+            self.handle_search_key(key);
+            return;
+        }
         if self.confirm_popup.is_some() {
             self.handle_confirm_key(key);
             return;
@@ -221,6 +229,12 @@ impl App {
         }
 
         match key {
+            KeyCode::Char('/') => {
+                if matches!(self.view, AppView::Tickrs | AppView::ProjectTickrs | AppView::Projects) {
+                    self.search_active = true;
+                    self.search_filter.clear();
+                }
+            }
             KeyCode::Char('?') => self.toggle_help(),
             KeyCode::Char('q') => self.running = false,
             KeyCode::Char('h') => {
@@ -298,7 +312,13 @@ impl App {
             KeyCode::Char(' ') => self.toggle_tickr(),
             KeyCode::Char('s') => self.stop_running_tickr(),
             KeyCode::Char('g') => self.go_to_project_from_tickr(),
-            KeyCode::Esc => self.go_back(),
+            KeyCode::Esc => {
+                if !self.search_filter.is_empty() {
+                    self.search_filter.clear();
+                } else {
+                    self.go_back();
+                }
+            }
             KeyCode::Char('e') => self.open_edit_popup(),
             KeyCode::Char('n') => match self.view {
                 AppView::Projects | AppView::ProjectTickrs => self.open_new_tickr_popup(),
@@ -1398,6 +1418,56 @@ impl App {
             total_seconds,
             task_count,
             project_count: active_projects.len(),
+        }
+    }
+
+    fn handle_search_key(&mut self, key: KeyCode) {
+        match key {
+            KeyCode::Char(c) => {
+                self.search_filter.push(c);
+            }
+            KeyCode::Backspace => {
+                self.search_filter.pop();
+            }
+            KeyCode::Enter | KeyCode::Esc => {
+                self.search_active = false;
+                if key == KeyCode::Esc {
+                    self.search_filter.clear();
+                }
+            }
+            _ => {}
+        }
+    }
+
+    pub fn filtered_tickrs(&self) -> Vec<&Tickr> {
+        if self.search_filter.is_empty() {
+            self.tickrs.iter().collect()
+        } else {
+            let filter_lower = self.search_filter.to_lowercase();
+            self.tickrs
+                .iter()
+                .filter(|tickr| {
+                    tickr.description.to_lowercase().contains(&filter_lower)
+                        || self
+                            .projects
+                            .iter()
+                            .find(|p| p.id == Some(tickr.project_id))
+                            .map(|p| p.name.to_lowercase().contains(&filter_lower))
+                            .unwrap_or(false)
+                })
+                .collect()
+        }
+    }
+
+    pub fn filtered_projects(&self) -> Vec<&Project> {
+        if self.search_filter.is_empty() {
+            self.projects.iter().collect()
+        } else {
+            let filter_lower = self.search_filter.to_lowercase();
+            self.projects
+                .iter()
+                .filter(|project| project.name.to_lowercase().contains(&filter_lower))
+                .collect()
         }
     }
 }

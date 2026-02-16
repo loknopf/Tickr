@@ -9,13 +9,49 @@ use super::theme::Theme;
 use crate::app::{App, WorkedRange};
 
 pub fn build_projects_text(app: &App) -> Text<'_> {
-    if let Some(status) = &app.status {
-        return Text::from(status.as_str());
-    }
-    if app.projects.is_empty() {
-        return Text::from("No projects found. Press 'r' to refresh.");
-    }
     let mut lines = Vec::new();
+    
+    // Show search bar if active
+    if app.search_active {
+        lines.push(Line::from(vec![
+            Span::styled("Search: ", Style::default().fg(Theme::highlight()).add_modifier(Modifier::BOLD)),
+            Span::styled(&app.search_filter, Style::default().fg(Theme::text())),
+            Span::styled("_", Style::default().fg(Theme::highlight())),
+        ]));
+        lines.push(Line::from(Span::styled(
+            "Type to search, Enter to apply, Esc to cancel",
+            Style::default().fg(Theme::dim()),
+        )));
+        lines.push(Line::from(""));
+    } else if !app.search_filter.is_empty() {
+        lines.push(Line::from(vec![
+            Span::styled("Filtered: ", Style::default().fg(Theme::accent())),
+            Span::styled(&app.search_filter, Style::default().fg(Theme::text())),
+            Span::styled(" (press / to edit, Esc to clear)", Style::default().fg(Theme::dim())),
+        ]));
+        lines.push(Line::from(""));
+    }
+    
+    if let Some(status) = &app.status {
+        lines.push(Line::from(status.as_str()));
+        return Text::from(lines);
+    }
+    
+    let projects_to_display = app.filtered_projects();
+    
+    if projects_to_display.is_empty() {
+        if app.search_filter.is_empty() {
+            lines.push(Line::from("No projects found. Press 'r' to refresh."));
+        } else {
+            lines.push(Line::from(vec![
+                Span::styled("No projects match '", Style::default().fg(Theme::dim())),
+                Span::styled(&app.search_filter, Style::default().fg(Theme::text())),
+                Span::styled("'. Press Esc to clear filter.", Style::default().fg(Theme::dim())),
+            ]));
+        }
+        return Text::from(lines);
+    }
+    
     lines.push(Line::from(Span::styled(
         format!(
             "  {:<24} {:>8} {:>5} {:>5}",
@@ -32,8 +68,7 @@ pub fn build_projects_text(app: &App) -> Text<'_> {
         ),
         Style::default().fg(Theme::dim()),
     )));
-    let project_lines = app
-        .projects
+    let project_lines = projects_to_display
         .iter()
         .enumerate()
         .map(|(index, project)| {
