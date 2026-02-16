@@ -25,21 +25,30 @@ pub enum AppView {
     Tickrs,
     ProjectTickrs,
     WorkedProjects,
+    Timeline,
     Categories,
     TickrDetail,
+    Help,
 }
 
-const TABS: [AppView; 5] = [
+const TABS: [AppView; 6] = [
     AppView::Dashboard,
     AppView::Projects,
     AppView::Tickrs,
     AppView::WorkedProjects,
+    AppView::Timeline,
     AppView::Categories,
 ];
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum WorkedRange {
     Today,
+    Week,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TimelineRange {
+    Day,
     Week,
 }
 

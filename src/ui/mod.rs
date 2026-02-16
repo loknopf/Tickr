@@ -1,9 +1,11 @@
 mod categories;
 mod dashboard;
 mod detail;
+mod help;
 mod helpers;
 mod projects;
 mod theme;
+mod timeline;
 mod tickrs;
 
 use chrono::Local;
@@ -33,8 +35,10 @@ pub fn draw(frame: &mut Frame, app: &App) {
             tickrs::build_tickrs_text(app, true),
         ),
         AppView::WorkedProjects => (" Worked ", projects::build_worked_projects_text(app)),
+        AppView::Timeline => (" Timeline ", timeline::build_timeline_text(app)),
         AppView::Categories => (" Categories ", categories::build_categories_text(app)),
         AppView::TickrDetail => (" Task ", detail::build_tickr_detail_text(app)),
+        AppView::Help => (" Help ", help::build_help_text(app)),
     };
 
     let layout = Layout::default()
@@ -420,6 +424,7 @@ fn tabs_line(app: &App) -> Line<'_> {
         ("Projects", AppView::Projects),
         ("Tickrs", AppView::Tickrs),
         ("Worked", AppView::WorkedProjects),
+        ("Timeline", AppView::Timeline),
         ("Categories", AppView::Categories),
     ];
 
@@ -492,34 +497,45 @@ fn keybinds_lines(app: &App) -> Vec<Line<'static>> {
     let focus_hint = if app.focus_mode == crate::app::FocusMode::TabBar {
         "Tab: Switch to content  ←/→: Navigate tabs  Enter: Select"
     } else {
-        "Tab: Switch to tab bar  h/p/t/w/c: Quick nav"
+        "Tab: Switch to tab bar  h/p/t/w/l/c: Quick nav  ?: Help"
     };
 
     let (primary, secondary) = match app.view {
         AppView::Dashboard => (
-            "h: Home  p: Projects  t: Tasks  w: Worked  c: Categories",
-            "r: Refresh  q: Quit",
+            "h: Home  p: Projects  t: Tasks  w: Worked  l: Timeline  c: Categories",
+            "r: Refresh  ?: Help  q: Quit",
         ),
         AppView::Projects => (
             "Up/Down: Select  Enter: Open  n: New task",
-            "r: Refresh  q: Quit",
+            "r: Refresh  ?: Help  q: Quit",
         ),
         AppView::Tickrs => (
             "Up/Down: Select  Enter: Detail  space: Start/End",
-            "r: Refresh  q: Quit",
+            "r: Refresh  ?: Help  q: Quit",
         ),
         AppView::ProjectTickrs => (
             "Up/Down: Select  Enter: Detail  space: Start/End  n: New task",
-            "esc: Back  r: Refresh  q: Quit",
+            "esc: Back  r: Refresh  ?: Help  q: Quit",
         ),
         AppView::WorkedProjects => (
             "Up/Down: Select  Enter: Open  Shift+Tab: Adjust Range",
-            "r: Refresh  q: Quit",
+            "r: Refresh  ?: Help  q: Quit",
         ),
-        AppView::Categories => ("Up/Down: Select  n: New", "esc: Back  r: Refresh  q: Quit"),
+        AppView::Timeline => (
+            "Shift+Tab: Day/Week  h/p/t/w/l/c: Quick nav",
+            "r: Refresh  ?: Help  q: Quit",
+        ),
+        AppView::Categories => (
+            "Up/Down: Select  n: New",
+            "esc: Back  r: Refresh  ?: Help  q: Quit",
+        ),
         AppView::TickrDetail => (
             "space: Start/End  s: Stop  g: Project  e: Edit",
-            "esc: Back  q: Quit",
+            "esc: Back  ?: Help  q: Quit",
+        ),
+        AppView::Help => (
+            "?: Back  esc: Back  h/p/t/w/l/c: Quick nav",
+            "q: Quit",
         ),
     };
     vec![

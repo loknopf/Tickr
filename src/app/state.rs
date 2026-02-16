@@ -6,7 +6,7 @@ use rusqlite::Connection;
 use crate::db;
 use crate::types::{CategoryId, Project, ProjectId, Tickr, TickrCategory, TickrId};
 
-use super::{AppEvent, AppView, FocusMode, ProjectSummary, TABS, WorkedRange};
+use super::{AppEvent, AppView, FocusMode, ProjectSummary, TABS, TimelineRange, WorkedRange};
 
 /// The top-level application state.
 pub struct App {
@@ -31,6 +31,7 @@ pub struct App {
     pub project_summaries: HashMap<ProjectId, ProjectSummary>,
     pub categories: HashMap<CategoryId, TickrCategory>,
     pub worked_range: WorkedRange,
+    pub timeline_range: TimelineRange,
     pub focus_mode: FocusMode,
     pub selected_tab_index: usize,
     pub edit_popup: Option<EditTickrPopup>,
@@ -157,6 +158,7 @@ impl App {
             project_summaries: HashMap::new(),
             categories: HashMap::new(),
             worked_range: WorkedRange::Today,
+            timeline_range: TimelineRange::Day,
             focus_mode: FocusMode::Content,
             selected_tab_index: 0,
             edit_popup: None,
@@ -222,9 +224,20 @@ impl App {
                 self.load_worked_projects();
                 self.selected_project = None;
             }
+            KeyCode::Char('l') => {
+                self.navigate_to(AppView::Timeline);
+                self.load_timeline();
+            }
             KeyCode::Char('c') => {
                 self.navigate_to(AppView::Categories);
                 self.load_categories();
+            }
+            KeyCode::Char('?') => {
+                if self.view == AppView::Help {
+                    self.go_back();
+                } else {
+                    self.navigate_to(AppView::Help);
+                }
             }
             KeyCode::Tab => {
                 if self.focus_mode == FocusMode::TabBar {
@@ -236,6 +249,8 @@ impl App {
             KeyCode::BackTab => {
                 if self.view == AppView::WorkedProjects {
                     self.toggle_worked_range();
+                } else if self.view == AppView::Timeline {
+                    self.toggle_timeline_range();
                 }
             }
             KeyCode::Char('r') => match self.view {
@@ -244,8 +259,10 @@ impl App {
                 AppView::Tickrs => self.load_tickrs(),
                 AppView::ProjectTickrs => self.load_project_tickrs(),
                 AppView::WorkedProjects => self.load_worked_projects(),
+                AppView::Timeline => self.load_timeline(),
                 AppView::Categories => self.load_categories(),
                 AppView::TickrDetail => self.refresh_tickr_detail(),
+                AppView::Help => {}
             },
             KeyCode::Left => {
                 if self.focus_mode == FocusMode::TabBar {
@@ -311,8 +328,10 @@ impl App {
             AppView::Tickrs => self.load_tickrs(),
             AppView::ProjectTickrs => self.load_project_tickrs(),
             AppView::WorkedProjects => self.load_worked_projects(),
+            AppView::Timeline => self.load_timeline(),
             AppView::Categories => self.load_categories(),
             AppView::TickrDetail => self.refresh_tickr_detail(),
+            AppView::Help => {}
         }
     }
 
@@ -488,8 +507,10 @@ impl App {
             AppView::Tickrs => self.load_tickrs(),
             AppView::ProjectTickrs => self.load_project_tickrs(),
             AppView::WorkedProjects => self.load_worked_projects(),
+            AppView::Timeline => self.load_timeline(),
             AppView::Categories => self.load_categories(),
             AppView::TickrDetail => self.refresh_tickr_detail(),
+            AppView::Help => {}
         }
     }
 
@@ -576,6 +597,10 @@ impl App {
                 self.status = Some(format!("Failed to load tickrs: {err}"));
             }
         }
+    }
+
+    fn load_timeline(&mut self) {
+        self.load_tickrs();
     }
 
     fn load_categories(&mut self) {
@@ -737,6 +762,8 @@ impl App {
             AppView::WorkedProjects => self.open_selected_worked_project(),
             AppView::Categories => {}
             AppView::TickrDetail => {}
+            AppView::Timeline => {}
+            AppView::Help => {}
         }
     }
 
@@ -1220,6 +1247,16 @@ impl App {
         };
         if self.view == AppView::WorkedProjects {
             self.load_worked_projects();
+        }
+    }
+
+    fn toggle_timeline_range(&mut self) {
+        self.timeline_range = match self.timeline_range {
+            TimelineRange::Day => TimelineRange::Week,
+            TimelineRange::Week => TimelineRange::Day,
+        };
+        if self.view == AppView::Timeline {
+            self.load_timeline();
         }
     }
 
