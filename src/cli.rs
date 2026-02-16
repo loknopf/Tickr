@@ -31,6 +31,19 @@ pub enum Command {
         name: String,
         color_opt: Option<String>,
     },
+    Export {
+        /// Output file path for CSV export
+        #[arg(short = 'o', long = "output", default_value = "tickr_export.csv")]
+        output: String,
+        
+        /// Start date for export (RFC3339 format, e.g., 2024-01-01T00:00:00+00:00)
+        #[arg(short = 's', long = "start")]
+        start: Option<String>,
+        
+        /// End date for export (RFC3339 format, e.g., 2024-12-31T23:59:59+00:00)
+        #[arg(short = 'e', long = "end")]
+        end: Option<String>,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -91,6 +104,7 @@ pub fn run(command: Command, conn: &Connection) -> Result<()> {
                 },
         } => handle_task_switch(project, description, conn)?, // Starting a task is the same as switching to it if no other is currently running
         Command::Category { name, color_opt } => handle_category_add(name, color_opt, conn)?,
+        Command::Export { output, start, end } => handle_export(output, start, end, conn)?,
     }
     Ok(())
 }
@@ -234,5 +248,107 @@ fn parse_optional_datetime(value: Option<String>) -> Result<Option<DateTime<Loca
             Ok(Some(dt))
         }
         None => Ok(None),
+    }
+}
+
+fn handle_export(
+    output: String,
+    start: Option<String>,
+    end: Option<String>,
+    conn: &Connection,
+) -> Result<()> {
+    use std::fs::File;
+    use std::io::Write;
+
+    let start_time = parse_optional_datetime(start)?;
+    let end_time = parse_optional_datetime(end)?;
+
+    // Get all tickrs
+    let tickrs = db::query_tickr(types::TickrQuery::All, conn)?;
+    let projects = db::query_projects(conn)?;
+    let categories = db::query_categories(conn)?;
+
+    // Create CSV file
+    let mut file = File::create(&output)?;
+
+    // Write CSV header
+    writeln!(
+        file,
+        "Project,Task,Category,Start Time,End Time,Duration (seconds)"
+    )?;
+
+    let mut total_exported = 0;
+
+    // Write data rows
+    for tickr in &tickrs {
+        let project_name = projects
+            .iter()
+            .find(|p| p.id == Some(tickr.project_id))
+            .map(|p| p.name.as_str())
+            .unwrap_or("Unknown");
+
+        let category_name = tickr
+            .category_id
+            .and_then(|cat_id| {
+                categories
+                    .iter()
+                    .find(|c| c.id == cat_id)
+                    .map(|c| c.name.as_str())
+            })
+            .unwrap_or("");
+
+        for interval in &tickr.intervals {
+            // Filter by date range if provided
+            if let Some(start) = start_time {
+                if interval.start_time < start {
+                    continue;
+                }
+            }
+            if let Some(end) = end_time {
+                if interval.start_time > end {
+                    continue;
+                }
+            }
+
+            let start_str = interval.start_time.to_rfc3339();
+            let end_str = interval
+                .end_time
+                .map(|e| e.to_rfc3339())
+                .unwrap_or_else(|| "Running".to_string());
+
+            let duration = if let Some(end_time) = interval.end_time {
+                end_time
+                    .signed_duration_since(interval.start_time)
+                    .num_seconds()
+            } else {
+                Local::now()
+                    .signed_duration_since(interval.start_time)
+                    .num_seconds()
+            };
+
+            writeln!(
+                file,
+                "{},{},{},{},{},{}",
+                escape_csv(project_name),
+                escape_csv(&tickr.description),
+                escape_csv(category_name),
+                start_str,
+                end_str,
+                duration
+            )?;
+
+            total_exported += 1;
+        }
+    }
+
+    println!("Exported {} intervals to {}", total_exported, output);
+    Ok(())
+}
+
+fn escape_csv(s: &str) -> String {
+    if s.contains(',') || s.contains('"') || s.contains('\n') {
+        format!("\"{}\"", s.replace('"', "\"\""))
+    } else {
+        s.to_string()
     }
 }

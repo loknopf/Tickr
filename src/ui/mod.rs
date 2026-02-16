@@ -637,6 +637,14 @@ fn build_help_text() -> Text<'static> {
         Span::styled("      Move selection up/down in lists", Style::default().fg(Theme::text())),
     ]));
     lines.push(Line::from(vec![
+        Span::styled("  PgUp/PgDn", Style::default().fg(Theme::selection_marker()).add_modifier(Modifier::BOLD)),
+        Span::styled(" Jump 10 items in lists", Style::default().fg(Theme::text())),
+    ]));
+    lines.push(Line::from(vec![
+        Span::styled("  Home/End", Style::default().fg(Theme::selection_marker()).add_modifier(Modifier::BOLD)),
+        Span::styled("  Jump to first/last item in lists", Style::default().fg(Theme::text())),
+    ]));
+    lines.push(Line::from(vec![
         Span::styled("  Enter", Style::default().fg(Theme::selection_marker()).add_modifier(Modifier::BOLD)),
         Span::styled("     Open/select item", Style::default().fg(Theme::text())),
     ]));
@@ -673,6 +681,24 @@ fn build_help_text() -> Text<'static> {
     lines.push(Line::from(vec![
         Span::styled("  r", Style::default().fg(Theme::selection_marker()).add_modifier(Modifier::BOLD)),
         Span::styled("         Refresh current view", Style::default().fg(Theme::text())),
+    ]));
+    lines.push(Line::from(""));
+    
+    lines.push(Line::from(Span::styled(
+        "Search & Filter",
+        Style::default().fg(Theme::highlight()).add_modifier(Modifier::BOLD),
+    )));
+    lines.push(Line::from(vec![
+        Span::styled("  /", Style::default().fg(Theme::selection_marker()).add_modifier(Modifier::BOLD)),
+        Span::styled("         Start search (in Projects/Tasks views)", Style::default().fg(Theme::text())),
+    ]));
+    lines.push(Line::from(vec![
+        Span::styled("  Enter", Style::default().fg(Theme::selection_marker()).add_modifier(Modifier::BOLD)),
+        Span::styled("     Apply search filter", Style::default().fg(Theme::text())),
+    ]));
+    lines.push(Line::from(vec![
+        Span::styled("  Esc", Style::default().fg(Theme::selection_marker()).add_modifier(Modifier::BOLD)),
+        Span::styled("       Clear search filter", Style::default().fg(Theme::text())),
     ]));
     lines.push(Line::from(""));
     

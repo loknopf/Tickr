@@ -8,6 +8,7 @@ Tickr is a terminal-based time tracker with a TUI and a small CLI for quick data
 - Comprehensive dashboard with daily statistics
 - Interactive help screen (press `?`)
 - Search and filter tasks and projects (press `/`)
+- CSV export for time logs with date range filtering
 - Animated indicator for running tasks
 - Detail view edit popup (label + category)
 - Categories tab with in-app category creation and color preview
@@ -134,6 +135,19 @@ Add a category (optionally with hex color):
 
 ```bash
 cargo run -- category "Writing" "#FFAA00"
+```
+
+Export time logs to CSV:
+
+```bash
+# Export all time logs
+cargo run -- export
+
+# Export to a specific file
+cargo run -- export --output my_timesheet.csv
+
+# Export with date range
+cargo run -- export --start "2024-01-01T00:00:00+00:00" --end "2024-12-31T23:59:59+00:00"
 ```
 
 ## Data

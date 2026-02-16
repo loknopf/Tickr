@@ -302,6 +302,26 @@ impl App {
                     self.move_selection_down();
                 }
             }
+            KeyCode::PageUp => {
+                if self.focus_mode == FocusMode::Content {
+                    self.move_selection_page_up();
+                }
+            }
+            KeyCode::PageDown => {
+                if self.focus_mode == FocusMode::Content {
+                    self.move_selection_page_down();
+                }
+            }
+            KeyCode::Home => {
+                if self.focus_mode == FocusMode::Content {
+                    self.move_selection_home();
+                }
+            }
+            KeyCode::End => {
+                if self.focus_mode == FocusMode::Content {
+                    self.move_selection_end();
+                }
+            }
             KeyCode::Enter => {
                 if self.focus_mode == FocusMode::TabBar {
                     self.activate_selected_tab();
@@ -735,6 +755,104 @@ impl App {
                 }
                 self.selected_category_index =
                     (self.selected_category_index + 1) % self.categories_list.len();
+            }
+            _ => {}
+        }
+    }
+
+    fn move_selection_page_up(&mut self) {
+        const PAGE_SIZE: usize = 10;
+        match self.view {
+            AppView::Projects => {
+                if self.projects.is_empty() {
+                    return;
+                }
+                self.selected_project_index = self.selected_project_index.saturating_sub(PAGE_SIZE);
+            }
+            AppView::Tickrs | AppView::ProjectTickrs => {
+                if self.tickrs.is_empty() {
+                    return;
+                }
+                self.selected_tickr_index = self.selected_tickr_index.saturating_sub(PAGE_SIZE);
+            }
+            AppView::WorkedProjects => {
+                if self.worked_projects.is_empty() {
+                    return;
+                }
+                self.selected_worked_project_index = self.selected_worked_project_index.saturating_sub(PAGE_SIZE);
+            }
+            AppView::Categories => {
+                if self.categories_list.is_empty() {
+                    return;
+                }
+                self.selected_category_index = self.selected_category_index.saturating_sub(PAGE_SIZE);
+            }
+            _ => {}
+        }
+    }
+
+    fn move_selection_page_down(&mut self) {
+        const PAGE_SIZE: usize = 10;
+        match self.view {
+            AppView::Projects => {
+                if self.projects.is_empty() {
+                    return;
+                }
+                self.selected_project_index = (self.selected_project_index + PAGE_SIZE).min(self.projects.len() - 1);
+            }
+            AppView::Tickrs | AppView::ProjectTickrs => {
+                if self.tickrs.is_empty() {
+                    return;
+                }
+                self.selected_tickr_index = (self.selected_tickr_index + PAGE_SIZE).min(self.tickrs.len() - 1);
+            }
+            AppView::WorkedProjects => {
+                if self.worked_projects.is_empty() {
+                    return;
+                }
+                self.selected_worked_project_index = (self.selected_worked_project_index + PAGE_SIZE).min(self.worked_projects.len() - 1);
+            }
+            AppView::Categories => {
+                if self.categories_list.is_empty() {
+                    return;
+                }
+                self.selected_category_index = (self.selected_category_index + PAGE_SIZE).min(self.categories_list.len() - 1);
+            }
+            _ => {}
+        }
+    }
+
+    fn move_selection_home(&mut self) {
+        match self.view {
+            AppView::Projects => self.selected_project_index = 0,
+            AppView::Tickrs | AppView::ProjectTickrs => self.selected_tickr_index = 0,
+            AppView::WorkedProjects => self.selected_worked_project_index = 0,
+            AppView::Categories => self.selected_category_index = 0,
+            _ => {}
+        }
+    }
+
+    fn move_selection_end(&mut self) {
+        match self.view {
+            AppView::Projects => {
+                if !self.projects.is_empty() {
+                    self.selected_project_index = self.projects.len() - 1;
+                }
+            }
+            AppView::Tickrs | AppView::ProjectTickrs => {
+                if !self.tickrs.is_empty() {
+                    self.selected_tickr_index = self.tickrs.len() - 1;
+                }
+            }
+            AppView::WorkedProjects => {
+                if !self.worked_projects.is_empty() {
+                    self.selected_worked_project_index = self.worked_projects.len() - 1;
+                }
+            }
+            AppView::Categories => {
+                if !self.categories_list.is_empty() {
+                    self.selected_category_index = self.categories_list.len() - 1;
+                }
             }
             _ => {}
         }
