@@ -35,6 +35,7 @@ pub struct App {
     pub selected_tab_index: usize,
     pub edit_popup: Option<EditTickrPopup>,
     pub new_category_popup: Option<NewCategoryPopup>,
+    pub new_tickr_popup: Option<NewTickrPopup>,
 }
 
 #[derive(Clone, Debug)]
@@ -42,6 +43,12 @@ pub struct CategoryOption {
     pub id: Option<CategoryId>,
     pub name: String,
     pub color: Option<String>,
+}
+
+#[derive(Clone, Debug)]
+pub struct ProjectOption {
+    pub id: ProjectId,
+    pub name: String,
 }
 
 #[derive(Clone, Debug)]
@@ -63,6 +70,25 @@ pub struct NewCategoryPopup {
     pub name: String,
     pub color: String,
     pub field: CategoryField,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum NewTickrField {
+    Label,
+    Project,
+    Category,
+    StartNow,
+}
+
+#[derive(Clone, Debug)]
+pub struct NewTickrPopup {
+    pub label: String,
+    pub project_index: usize,
+    pub category_index: usize,
+    pub projects: Vec<ProjectOption>,
+    pub categories: Vec<CategoryOption>,
+    pub start_now: bool,
+    pub field: NewTickrField,
 }
 
 impl EditTickrPopup {
@@ -131,6 +157,7 @@ impl App {
             selected_tab_index: 0,
             edit_popup: None,
             new_category_popup: None,
+            new_tickr_popup: None,
         };
         
         // Initialize categories and project summaries
@@ -163,6 +190,10 @@ impl App {
         }
         if self.new_category_popup.is_some() {
             self.handle_new_category_key(key);
+            return;
+        }
+        if self.new_tickr_popup.is_some() {
+            self.handle_new_tickr_key(key);
             return;
         }
 
@@ -244,7 +275,11 @@ impl App {
             KeyCode::Char('g') => self.go_to_project_from_tickr(),
             KeyCode::Esc => self.go_back(),
             KeyCode::Char('e') => self.open_edit_popup(),
-            KeyCode::Char('n') => self.open_new_category_popup(),
+            KeyCode::Char('n') => match self.view {
+                AppView::Projects | AppView::ProjectTickrs => self.open_new_tickr_popup(),
+                AppView::Categories => self.open_new_category_popup(),
+                _ => {}
+            },
             _ => {}
         }
     }
@@ -357,6 +392,82 @@ impl App {
                 match popup.field {
                     CategoryField::Name => popup.name.push(ch),
                     CategoryField::Color => popup.color.push(ch),
+                }
+            }
+            _ => {}
+        }
+    }
+
+    fn handle_new_tickr_key(&mut self, key: KeyCode) {
+        let Some(popup) = self.new_tickr_popup.as_mut() else {
+            return;
+        };
+        match key {
+            KeyCode::Esc => {
+                self.new_tickr_popup = None;
+                self.clear_status();
+            }
+            KeyCode::Enter => self.apply_new_tickr_popup(),
+            KeyCode::Tab => {
+                popup.field = match popup.field {
+                    NewTickrField::Label => NewTickrField::Project,
+                    NewTickrField::Project => NewTickrField::Category,
+                    NewTickrField::Category => NewTickrField::StartNow,
+                    NewTickrField::StartNow => NewTickrField::Label,
+                };
+            }
+            KeyCode::Up => match popup.field {
+                NewTickrField::Project => {
+                    if !popup.projects.is_empty() {
+                        if popup.project_index == 0 {
+                            popup.project_index = popup.projects.len() - 1;
+                        } else {
+                            popup.project_index -= 1;
+                        }
+                    }
+                }
+                NewTickrField::Category => {
+                    if !popup.categories.is_empty() {
+                        if popup.category_index == 0 {
+                            popup.category_index = popup.categories.len() - 1;
+                        } else {
+                            popup.category_index -= 1;
+                        }
+                    }
+                }
+                _ => {}
+            },
+            KeyCode::Down => match popup.field {
+                NewTickrField::Project => {
+                    if !popup.projects.is_empty() {
+                        popup.project_index = (popup.project_index + 1) % popup.projects.len();
+                    }
+                }
+                NewTickrField::Category => {
+                    if !popup.categories.is_empty() {
+                        popup.category_index = (popup.category_index + 1) % popup.categories.len();
+                    }
+                }
+                _ => {}
+            },
+            KeyCode::Char(' ') => {
+                if popup.field == NewTickrField::StartNow {
+                    popup.start_now = !popup.start_now;
+                } else if popup.field == NewTickrField::Label {
+                    popup.label.push(' ');
+                }
+            }
+            KeyCode::Backspace | KeyCode::Delete => {
+                if popup.field == NewTickrField::Label {
+                    popup.label.pop();
+                }
+            }
+            KeyCode::Char(ch) => {
+                if ch.is_control() {
+                    return;
+                }
+                if popup.field == NewTickrField::Label {
+                    popup.label.push(ch);
                 }
             }
             _ => {}
@@ -678,6 +789,81 @@ impl App {
         });
     }
 
+    fn open_new_tickr_popup(&mut self) {
+        if self.view != AppView::Projects && self.view != AppView::ProjectTickrs {
+            return;
+        }
+
+        let projects = match db::query_projects(&self.db) {
+            Ok(projects) => projects,
+            Err(err) => {
+                self.status = Some(format!("Failed to load projects: {err}"));
+                return;
+            }
+        };
+        let mut project_options = Vec::new();
+        for project in projects {
+            if let Some(id) = project.id {
+                project_options.push(ProjectOption {
+                    id,
+                    name: project.name,
+                });
+            }
+        }
+        if project_options.is_empty() {
+            self.status = Some("No projects available.".to_string());
+            return;
+        }
+
+        let mut categories = match db::query_categories(&self.db) {
+            Ok(categories) => categories,
+            Err(err) => {
+                self.status = Some(format!("Failed to load categories: {err}"));
+                return;
+            }
+        };
+        categories.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+
+        let mut category_options = Vec::new();
+        category_options.push(CategoryOption {
+            id: None,
+            name: "none".to_string(),
+            color: None,
+        });
+        for category in categories {
+            category_options.push(CategoryOption {
+                id: Some(category.id),
+                name: category.name,
+                color: Some(category.color),
+            });
+        }
+
+        let selected_project_id = match self.view {
+            AppView::ProjectTickrs => self.selected_project.as_ref().and_then(|p| p.id),
+            AppView::Projects => self
+                .projects
+                .get(self.selected_project_index)
+                .and_then(|project| project.id),
+            _ => None,
+        };
+        let mut project_index = 0;
+        if let Some(project_id) = selected_project_id {
+            if let Some(index) = project_options.iter().position(|opt| opt.id == project_id) {
+                project_index = index;
+            }
+        }
+
+        self.new_tickr_popup = Some(NewTickrPopup {
+            label: String::new(),
+            project_index,
+            category_index: 0,
+            projects: project_options,
+            categories: category_options,
+            start_now: true,
+            field: NewTickrField::Label,
+        });
+    }
+
     fn apply_edit_popup(&mut self) {
         let Some(popup) = self.edit_popup.take() else {
             return;
@@ -744,6 +930,76 @@ impl App {
             .position(|category| category.name == name)
         {
             self.selected_category_index = index;
+        }
+    }
+
+    fn apply_new_tickr_popup(&mut self) {
+        let Some(popup) = self.new_tickr_popup.take() else {
+            return;
+        };
+
+        let label = popup.label.trim().to_string();
+        if label.is_empty() {
+            self.status = Some("Task label is required.".to_string());
+            self.new_tickr_popup = Some(popup);
+            return;
+        }
+
+        let project_id = match popup.projects.get(popup.project_index) {
+            Some(project) => project.id,
+            None => {
+                self.status = Some("Project selection is required.".to_string());
+                self.new_tickr_popup = Some(popup);
+                return;
+            }
+        };
+
+        let category_id = popup
+            .categories
+            .get(popup.category_index)
+            .and_then(|option| option.id);
+
+        let tickr = Tickr {
+            id: None,
+            project_id,
+            description: label.clone(),
+            category_id,
+            intervals: Vec::new(),
+        };
+
+        let tickr_id = match db::create_tickr(tickr, &self.db) {
+            Ok(id) => id,
+            Err(err) => {
+                self.status = Some(format!("Failed to create task: {err}"));
+                self.new_tickr_popup = Some(popup);
+                return;
+            }
+        };
+
+        if popup.start_now {
+            if let Some(running_id) = self.running_tickr {
+                if let Err(err) = db::end_tickr(running_id, &self.db) {
+                    self.status = Some(format!("Failed to stop running task: {err}"));
+                    return;
+                }
+                self.running_tickr = None;
+            }
+            if let Err(err) = db::start_tickr(tickr_id, &self.db) {
+                self.status = Some(format!("Failed to start task: {err}"));
+                return;
+            }
+            self.running_tickr = Some(tickr_id);
+            self.status = Some("Task created and started.".to_string());
+        } else {
+            self.status = Some("Task created.".to_string());
+        }
+
+        self.refresh_project_summaries();
+        match self.view {
+            AppView::Projects => self.load_projects(),
+            AppView::ProjectTickrs => self.load_project_tickrs(),
+            AppView::Tickrs => self.load_tickrs(),
+            _ => {}
         }
     }
 

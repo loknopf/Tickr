@@ -42,7 +42,7 @@ pub fn build_tickrs_text(app: &App, show_selection: bool) -> Text<'_> {
                 Style::default()
             };
             let marker_style = if selected {
-                Style::default().fg(Theme::highlight())
+                Style::default().fg(Theme::selection_marker())
             } else {
                 Style::default().fg(Theme::dim())
             };

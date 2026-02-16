@@ -22,7 +22,7 @@ pub fn build_categories_text(app: &App) -> Text<'_> {
         .map(|(index, category)| {
             let selected = index == app.selected_category_index;
             let marker_style = if selected {
-                Style::default().fg(Theme::highlight()).add_modifier(Modifier::BOLD)
+                Style::default().fg(Theme::selection_marker()).add_modifier(Modifier::BOLD)
             } else {
                 Style::default().fg(Theme::dim())
             };

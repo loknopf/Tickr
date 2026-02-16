@@ -107,6 +107,9 @@ pub fn draw(frame: &mut Frame, app: &App) {
     if let Some(popup) = &app.new_category_popup {
         render_new_category_popup(frame, popup);
     }
+    if let Some(popup) = &app.new_tickr_popup {
+        render_new_tickr_popup(frame, popup);
+    }
 }
 
 fn render_edit_popup(frame: &mut Frame, popup: &crate::app::EditTickrPopup) {
@@ -135,7 +138,7 @@ fn render_edit_popup(frame: &mut Frame, popup: &crate::app::EditTickrPopup) {
     for (index, option) in popup.categories.iter().enumerate() {
         let selected = index == popup.category_index;
         let marker_style = if selected {
-            Style::default().fg(Theme::highlight()).add_modifier(Modifier::BOLD)
+            Style::default().fg(Theme::selection_marker()).add_modifier(Modifier::BOLD)
         } else {
             Style::default().fg(Theme::dim())
         };
@@ -221,6 +224,134 @@ fn render_new_category_popup(frame: &mut Frame, popup: &crate::app::NewCategoryP
                 .border_type(BorderType::Rounded)
                 .style(Style::default().fg(Theme::secondary()))
                 .title(" New Category "),
+        );
+    frame.render_widget(popup_widget, area);
+}
+
+fn render_new_tickr_popup(frame: &mut Frame, popup: &crate::app::NewTickrPopup) {
+    let area = centered_rect(70, 75, frame.area());
+    frame.render_widget(Clear, area);
+
+    let label_active = popup.field == crate::app::NewTickrField::Label;
+    let project_active = popup.field == crate::app::NewTickrField::Project;
+    let category_active = popup.field == crate::app::NewTickrField::Category;
+    let start_active = popup.field == crate::app::NewTickrField::StartNow;
+
+    let arrow_style = Style::default()
+        .fg(Theme::selection_marker())
+        .add_modifier(Modifier::BOLD);
+    let label_style = if label_active {
+        Style::default().fg(Theme::highlight()).add_modifier(Modifier::BOLD)
+    } else {
+        Style::default().fg(Theme::text())
+    };
+    let label_title_style = if label_active {
+        Style::default().fg(Theme::highlight()).add_modifier(Modifier::BOLD)
+    } else {
+        Style::default().fg(Theme::dim())
+    };
+    let project_title_style = if project_active {
+        Style::default().fg(Theme::highlight()).add_modifier(Modifier::BOLD)
+    } else {
+        Style::default().fg(Theme::dim())
+    };
+    let category_title_style = if category_active {
+        Style::default().fg(Theme::highlight()).add_modifier(Modifier::BOLD)
+    } else {
+        Style::default().fg(Theme::dim())
+    };
+    let start_style = if start_active {
+        Style::default().fg(Theme::highlight()).add_modifier(Modifier::BOLD)
+    } else {
+        Style::default().fg(Theme::text())
+    };
+    let start_title_style = if start_active {
+        Style::default().fg(Theme::highlight()).add_modifier(Modifier::BOLD)
+    } else {
+        Style::default().fg(Theme::dim())
+    };
+
+    let mut lines = Vec::new();
+    lines.push(Line::from(Span::styled(
+        "New task",
+        Style::default().fg(Theme::accent()).add_modifier(Modifier::BOLD),
+    )));
+    lines.push(Line::from(""));
+    lines.push(Line::from(vec![
+        Span::styled(if label_active { "> " } else { "  " }, arrow_style),
+        Span::styled("Label: ", label_title_style),
+        Span::styled(popup.label.as_str(), label_style),
+    ]));
+    lines.push(Line::from(""));
+    lines.push(Line::from(vec![
+        Span::styled(if project_active { "> " } else { "  " }, arrow_style),
+        Span::styled("Project", project_title_style),
+    ]));
+    for (index, option) in popup.projects.iter().enumerate() {
+        let selected = index == popup.project_index;
+        let marker_style = if selected {
+            arrow_style
+        } else {
+            Style::default().fg(Theme::dim())
+        };
+        let name_style = if selected || project_active {
+            Style::default().fg(Theme::text()).add_modifier(Modifier::BOLD)
+        } else {
+            Style::default().fg(Theme::text())
+        };
+        lines.push(Line::from(vec![
+            Span::styled(if selected { "> " } else { "  " }, marker_style),
+            Span::styled(option.name.as_str(), name_style),
+        ]));
+    }
+    lines.push(Line::from(""));
+    lines.push(Line::from(vec![
+        Span::styled(if category_active { "> " } else { "  " }, arrow_style),
+        Span::styled("Category", category_title_style),
+    ]));
+    for (index, option) in popup.categories.iter().enumerate() {
+        let selected = index == popup.category_index;
+        let marker_style = if selected {
+            arrow_style
+        } else {
+            Style::default().fg(Theme::dim())
+        };
+        let mut name_style = if let Some(color) = option.color.as_deref().and_then(hex_to_color) {
+            Style::default().fg(color).add_modifier(Modifier::BOLD)
+        } else {
+            Style::default().fg(Theme::text())
+        };
+        if selected || category_active {
+            name_style = name_style.add_modifier(Modifier::BOLD);
+        }
+        lines.push(Line::from(vec![
+            Span::styled(if selected { "> " } else { "  " }, marker_style),
+            Span::styled(option.name.as_str(), name_style),
+        ]));
+    }
+    lines.push(Line::from(""));
+    lines.push(Line::from(vec![
+        Span::styled(if start_active { "> " } else { "  " }, arrow_style),
+        Span::styled("Start now: ", start_title_style),
+        Span::styled(
+            if popup.start_now { "yes" } else { "no" },
+            start_style,
+        ),
+    ]));
+    lines.push(Line::from(""));
+    lines.push(Line::from(Span::styled(
+        "Type to edit label. Tab: switch field. Up/Down: select. Space: toggle start. Enter: save. Esc: cancel.",
+        Style::default().fg(Theme::dim()),
+    )));
+
+    let popup_widget = Paragraph::new(Text::from(lines))
+        .alignment(Alignment::Left)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_type(BorderType::Rounded)
+                .style(Style::default().fg(Theme::secondary()))
+                .title(" New Task "),
         );
     frame.render_widget(popup_widget, area);
 }
@@ -329,7 +460,7 @@ fn keybinds_lines(app: &App) -> Vec<Line<'static>> {
             "r: Refresh  q: Quit",
         ),
         AppView::Projects => (
-            "Up/Down: Select  Enter: Open",
+            "Up/Down: Select  Enter: Open  n: New task",
             "r: Refresh  q: Quit",
         ),
         AppView::Tickrs => (
@@ -337,7 +468,7 @@ fn keybinds_lines(app: &App) -> Vec<Line<'static>> {
             "r: Refresh  q: Quit",
         ),
         AppView::ProjectTickrs => (
-            "Up/Down: Select  Enter: Detail  space: Start/End",
+            "Up/Down: Select  Enter: Detail  space: Start/End  n: New task",
             "esc: Back  r: Refresh  q: Quit",
         ),
         AppView::WorkedProjects => (

@@ -39,6 +39,11 @@ impl Theme {
         Color::Cyan
     }
 
+    /// Selection marker/arrow
+    pub fn selection_marker() -> Color {
+        Color::Green
+    }
+
     /// Dimmed/inactive text
     pub fn dim() -> Color {
         Color::DarkGray

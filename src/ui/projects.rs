@@ -48,7 +48,7 @@ pub fn build_projects_text(app: &App) -> Text<'_> {
                 Style::default()
             };
             let marker_style = if selected {
-                Style::default().fg(Theme::highlight())
+                Style::default().fg(Theme::selection_marker())
             } else {
                 Style::default().fg(Theme::dim())
             };
@@ -111,7 +111,7 @@ pub fn build_worked_projects_text(app: &App) -> Text<'_> {
                 Style::default()
             };
             let marker_style = if selected {
-                Style::default().fg(Theme::highlight())
+                Style::default().fg(Theme::selection_marker())
             } else {
                 Style::default().fg(Theme::dim())
             };

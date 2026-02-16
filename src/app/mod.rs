@@ -2,7 +2,15 @@ mod state;
 
 use crossterm::event::KeyCode;
 
-pub use state::{App, CategoryField, EditTickrPopup, NewCategoryPopup};
+pub use state::{
+    App,
+    CategoryField,
+    EditTickrPopup,
+    NewCategoryPopup,
+    NewTickrField,
+    NewTickrPopup,
+    ProjectOption,
+};
 
 /// Possible input events the app reacts to.
 pub enum AppEvent {
