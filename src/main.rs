@@ -20,7 +20,8 @@ fn main() -> Result<()> {
 
     let mut app = app::App::new(conn);
     let mut terminal = tui::init()?;
-    let result = event::run(&mut app, &mut terminal);
+    let mut event_handler = event::EventHandler::new();
+    let result = event_handler.run(&mut app, &mut terminal);
 
     tui::restore()?;
 

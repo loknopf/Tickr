@@ -52,9 +52,3 @@ pub fn query_categories(conn: &Connection) -> Result<Vec<TickrCategory>> {
     }
     Ok(categories)
 }
-
-pub fn check_category_exists(name: String, conn: &Connection) -> Result<bool> {
-    let mut stmt = conn.prepare("SELECT 1 FROM categories WHERE name = ?1")?;
-    let mut rows = stmt.query([name])?;
-    Ok(rows.next()?.is_some())
-}

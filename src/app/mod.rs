@@ -10,8 +10,15 @@ pub enum AppEvent {
     KeyPress(KeyCode),
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FocusMode {
+    TabBar,
+    Content,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum AppView {
+    Dashboard,
     Projects,
     Tickrs,
     ProjectTickrs,
@@ -19,6 +26,14 @@ pub enum AppView {
     Categories,
     TickrDetail,
 }
+
+const TABS: [AppView; 5] = [
+            AppView::Dashboard,
+            AppView::Projects,
+            AppView::Tickrs,
+            AppView::WorkedProjects,
+            AppView::Categories,
+        ];
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum WorkedRange {

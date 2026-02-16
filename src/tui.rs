@@ -1,9 +1,7 @@
 use std::io;
 
 use anyhow::Result;
-use crossterm::{
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+use crossterm::{execute, terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode}
 };
 use ratatui::prelude::CrosstermBackend;
 

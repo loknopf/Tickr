@@ -6,7 +6,7 @@ use rusqlite::Connection;
 use crate::db;
 use crate::types::{CategoryId, Project, ProjectId, Tickr, TickrCategory, TickrId};
 
-use super::{AppEvent, AppView, ProjectSummary, WorkedRange};
+use super::{AppEvent, AppView, TABS, FocusMode, ProjectSummary, WorkedRange};
 
 /// The top-level application state.
 pub struct App {
@@ -14,6 +14,7 @@ pub struct App {
     pub running_tickr: Option<TickrId>,
     pub db: Connection,
     pub view: AppView,
+    view_history: Vec<AppView>,
     pub projects: Vec<Project>,
     pub worked_projects: Vec<Project>,
     pub tickrs: Vec<Tickr>,
@@ -30,6 +31,8 @@ pub struct App {
     pub project_summaries: HashMap<ProjectId, ProjectSummary>,
     pub categories: HashMap<CategoryId, TickrCategory>,
     pub worked_range: WorkedRange,
+    pub focus_mode: FocusMode,
+    pub selected_tab_index: usize,
     pub edit_popup: Option<EditTickrPopup>,
     pub new_category_popup: Option<NewCategoryPopup>,
 }
@@ -102,11 +105,12 @@ impl App {
                 Some(id) => Some(id),
                 None => None,
             };
-        Self {
+        let mut app = Self {
             running: true,
             running_tickr,
             db,
-            view: AppView::Projects,
+            view: AppView::Dashboard,
+            view_history: Vec::new(),
             projects,
             worked_projects: Vec::new(),
             tickrs,
@@ -123,9 +127,17 @@ impl App {
             project_summaries: HashMap::new(),
             categories: HashMap::new(),
             worked_range: WorkedRange::Today,
+            focus_mode: FocusMode::Content,
+            selected_tab_index: 0,
             edit_popup: None,
             new_category_popup: None,
-        }
+        };
+        
+        // Initialize categories and project summaries
+        app.refresh_categories_for_tickrs();
+        app.refresh_project_summaries();
+        
+        app
     }
 
     /// Central update function - process an event and mutate state.
@@ -156,29 +168,43 @@ impl App {
 
         match key {
             KeyCode::Char('q') => self.running = false,
+            KeyCode::Char('h') => {
+                self.navigate_to(AppView::Dashboard);
+                self.load_dashboard();
+            }
             KeyCode::Char('p') => {
-                self.view = AppView::Projects;
+                self.navigate_to(AppView::Projects);
                 self.load_projects();
             }
             KeyCode::Char('t') => {
-                self.view = AppView::Tickrs;
+                self.navigate_to(AppView::Tickrs);
                 self.load_tickrs();
                 self.selected_tickr = None;
                 self.selected_tickr_project_name = None;
             }
             KeyCode::Char('w') => {
-                self.view = AppView::WorkedProjects;
+                self.navigate_to(AppView::WorkedProjects);
                 self.load_worked_projects();
                 self.selected_project = None;
             }
             KeyCode::Char('c') => {
-                self.view = AppView::Categories;
+                self.navigate_to(AppView::Categories);
                 self.load_categories();
             }
             KeyCode::Tab => {
-                self.toggle_worked_range();
+                if self.focus_mode == FocusMode::TabBar {
+                    self.focus_mode = FocusMode::Content;
+                } else {
+                    self.focus_mode = FocusMode::TabBar;
+                }
+            }
+            KeyCode::BackTab => {
+                if self.view == AppView::WorkedProjects {
+                    self.toggle_worked_range();
+                }
             }
             KeyCode::Char('r') => match self.view {
+                AppView::Dashboard => self.load_dashboard(),
                 AppView::Projects => self.load_projects(),
                 AppView::Tickrs => self.load_tickrs(),
                 AppView::ProjectTickrs => self.load_project_tickrs(),
@@ -186,9 +212,33 @@ impl App {
                 AppView::Categories => self.load_categories(),
                 AppView::TickrDetail => self.refresh_tickr_detail(),
             },
-            KeyCode::Up => self.move_selection_up(),
-            KeyCode::Down => self.move_selection_down(),
-            KeyCode::Enter => self.open_selected(),
+            KeyCode::Left => {
+                if self.focus_mode == FocusMode::TabBar {
+                    self.navigate_tab_left();
+                }
+            }
+            KeyCode::Right => {
+                if self.focus_mode == FocusMode::TabBar {
+                    self.navigate_tab_right();
+                }
+            }
+            KeyCode::Up => {
+                if self.focus_mode == FocusMode::Content {
+                    self.move_selection_up();
+                }
+            }
+            KeyCode::Down => {
+                if self.focus_mode == FocusMode::Content {
+                    self.move_selection_down();
+                }
+            }
+            KeyCode::Enter => {
+                if self.focus_mode == FocusMode::TabBar {
+                    self.activate_selected_tab();
+                } else {
+                    self.open_selected();
+                }
+            }
             KeyCode::Char(' ') => self.toggle_tickr(),
             KeyCode::Char('s') => self.stop_running_tickr(),
             KeyCode::Char('g') => self.go_to_project_from_tickr(),
@@ -197,6 +247,49 @@ impl App {
             KeyCode::Char('n') => self.open_new_category_popup(),
             _ => {}
         }
+    }
+
+    fn navigate_to(&mut self, view: AppView) {
+        if self.view != view {
+            self.view_history.push(self.view.clone());
+            self.view = view;
+            self.load_content_for_view();
+            // Update selected_tab_index to match the current view
+            if let Some(index) = TABS.iter().position(|v| *v == self.view || (self.view == AppView::ProjectTickrs && *v == AppView::Tickrs) || (self.view == AppView::TickrDetail && *v == AppView::Tickrs)) {
+                self.selected_tab_index = index;
+            }
+        }
+    }
+
+    fn load_content_for_view(&mut self) {
+        match self.view {
+            AppView::Dashboard => self.load_dashboard(),
+            AppView::Projects => self.load_projects(),
+            AppView::Tickrs => self.load_tickrs(),
+            AppView::ProjectTickrs => self.load_project_tickrs(),
+            AppView::WorkedProjects => self.load_worked_projects(),
+            AppView::Categories => self.load_categories(),
+            AppView::TickrDetail => self.refresh_tickr_detail(),
+        }
+    }
+
+    fn navigate_tab_left(&mut self) {
+        if self.selected_tab_index == 0 {
+            self.selected_tab_index = TABS.len() - 1;
+        } else {
+            self.selected_tab_index -= 1;
+        }
+    }
+
+    fn navigate_tab_right(&mut self) {
+        
+        self.selected_tab_index = (self.selected_tab_index + 1) % TABS.len();
+    }
+
+    fn activate_selected_tab(&mut self) {
+        let target_view = TABS[self.selected_tab_index].clone();
+        self.navigate_to(target_view);
+        self.focus_mode = FocusMode::Content;
     }
 
     fn handle_edit_key(&mut self, key: KeyCode) {
@@ -272,6 +365,7 @@ impl App {
 
     fn refresh_view_data(&mut self) {
         match self.view {
+            AppView::Dashboard => self.load_dashboard(),
             AppView::Projects => self.load_projects(),
             AppView::Tickrs => self.load_tickrs(),
             AppView::ProjectTickrs => self.load_project_tickrs(),
@@ -300,6 +394,13 @@ impl App {
 
     fn clear_status(&mut self) {
         self.status = None;
+    }
+
+    fn load_dashboard(&mut self) {
+        // Load all data for dashboard view
+        self.load_projects();
+        self.load_tickrs();
+        self.load_categories();
     }
 
     fn load_projects(&mut self) {
@@ -479,8 +580,7 @@ impl App {
         }
         let project = self.projects[self.selected_project_index].clone();
         self.selected_project = Some(project);
-        self.view = AppView::ProjectTickrs;
-        self.load_project_tickrs();
+        self.navigate_to(AppView::ProjectTickrs);
     }
 
     fn open_selected_worked_project(&mut self) {
@@ -502,11 +602,12 @@ impl App {
         self.selected_tickr_project_name = self.lookup_project_name(tickr.project_id);
         self.selected_tickr = Some(tickr);
         self.tickr_detail_parent = self.view.clone();
-        self.view = AppView::TickrDetail;
+        self.navigate_to(AppView::TickrDetail);
     }
 
     fn open_selected(&mut self) {
         match self.view {
+            AppView::Dashboard => {},
             AppView::Projects => self.open_selected_project(),
             AppView::Tickrs | AppView::ProjectTickrs => self.open_selected_tickr(),
             AppView::WorkedProjects => self.open_selected_worked_project(),
@@ -647,23 +748,10 @@ impl App {
     }
 
     fn go_back(&mut self) {
-        match self.view {
-            AppView::TickrDetail => {
-                self.view = self.tickr_detail_parent.clone();
-                self.selected_tickr = None;
-                self.selected_tickr_project_name = None;
-            }
-            AppView::ProjectTickrs => {
-                self.view = AppView::Projects;
-                self.selected_project = None;
-            }
-            AppView::WorkedProjects => {
-                self.view = AppView::Projects;
-            }
-            AppView::Categories => {
-                self.view = AppView::Projects;
-            }
-            _ => {}
+        if let Some(prev_view) = self.view_history.pop() {
+            //Assign the new view manually (cyclic loop when using navigate_to)
+            self.view = prev_view;
+            self.load_content_for_view();
         }
         self.clear_status();
     }
@@ -844,7 +932,7 @@ impl App {
             self.selected_project_index = index;
         }
         self.selected_project = Some(project);
-        self.view = AppView::ProjectTickrs;
+        self.navigate_to(AppView::ProjectTickrs);
         self.load_project_tickrs();
         if let Some(tickr_id) = highlight_tickr_id {
             if let Some(index) = self.tickrs.iter().position(|item| item.id == Some(tickr_id)) {

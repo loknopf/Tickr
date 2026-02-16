@@ -1,3 +1,4 @@
+mod dashboard;
 mod detail;
 mod helpers;
 mod categories;
@@ -24,6 +25,7 @@ use helpers::{format_duration, hex_to_color};
 pub fn draw(frame: &mut Frame, app: &App) {
     let area = frame.area();
     let (title, body_text) = match app.view {
+        AppView::Dashboard => (" Dashboard ", dashboard::build_dashboard_text(app)),
         AppView::Projects => (" Projects ", projects::build_projects_text(app)),
         AppView::Tickrs => (" Tickrs ", tickrs::build_tickrs_text(app, true)),
         AppView::ProjectTickrs => (
@@ -251,11 +253,11 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
 
 fn tabs_line(app: &App) -> Line<'_> {
     let tabs = [
+        ("Home", AppView::Dashboard),
         ("Projects", AppView::Projects),
         ("Tickrs", AppView::Tickrs),
         ("Worked", AppView::WorkedProjects),
         ("Categories", AppView::Categories),
-        ("Detail", AppView::TickrDetail),
     ];
 
     let mut spans = Vec::new();
@@ -265,14 +267,20 @@ fn tabs_line(app: &App) -> Line<'_> {
         }
         let active = match app.view {
             AppView::ProjectTickrs => *view == AppView::Tickrs,
+            AppView::TickrDetail => *view == AppView::Tickrs,
             AppView::WorkedProjects => *view == AppView::WorkedProjects,
             _ => *view == app.view,
         };
+        let focused = app.focus_mode == crate::app::FocusMode::TabBar && app.selected_tab_index == index;
         let style = if active {
             Style::default()
                 .fg(Color::Black)
                 .bg(Theme::highlight())
                 .add_modifier(Modifier::BOLD)
+        } else if focused {
+            Style::default()
+                .fg(Theme::highlight())
+                .add_modifier(Modifier::BOLD | Modifier::UNDERLINED)
         } else {
             Style::default().fg(Theme::dim())
         };
@@ -309,10 +317,20 @@ fn running_task_line(app: &App) -> Line<'_> {
 }
 
 fn keybinds_lines(app: &App) -> Vec<Line<'static>> {
+    let focus_hint = if app.focus_mode == crate::app::FocusMode::TabBar {
+        "Tab: Switch to content  ←/→: Navigate tabs  Enter: Select"
+    } else {
+        "Tab: Switch to tab bar  h/p/t/w/c: Quick nav"
+    };
+    
     let (primary, secondary) = match app.view {
+        AppView::Dashboard => (
+            "h: Home  p: Projects  t: Tasks  w: Worked  c: Categories",
+            "r: Refresh  q: Quit",
+        ),
         AppView::Projects => (
             "Up/Down: Select  Enter: Open",
-            "t/w/c: Tabs  r: Refresh  q: Quit",
+            "r: Refresh  q: Quit",
         ),
         AppView::Tickrs => (
             "Up/Down: Select  Enter: Detail  space: Start/End",
@@ -323,7 +341,7 @@ fn keybinds_lines(app: &App) -> Vec<Line<'static>> {
             "esc: Back  r: Refresh  q: Quit",
         ),
         AppView::WorkedProjects => (
-            "Up/Down: Select  Enter: Open  tab: Range",
+            "Up/Down: Select  Enter: Open  Shift+Tab: Adjust Range",
             "r: Refresh  q: Quit",
         ),
         AppView::Categories => (
@@ -336,6 +354,10 @@ fn keybinds_lines(app: &App) -> Vec<Line<'static>> {
         ),
     };
     vec![
+        Line::from(Span::styled(
+            focus_hint,
+            Style::default().fg(Theme::highlight()),
+        )),
         Line::from(Span::styled(
             primary,
             Style::default().fg(Theme::dim()),

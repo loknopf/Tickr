@@ -104,8 +104,8 @@ pub fn query_project_worked_on_week(conn: &Connection) -> Result<Vec<Project>> {
         FROM projects p
         JOIN entries e ON e.project_id = p.id
         JOIN intervals i ON i.entry_id = e.id
-        WHERE i.start_time >= date('now', 'localtime') || 'T00:00:00'
-        AND i.start_time <  date('now', 'localtime', '+5 day') || 'T00:00:00';"
+        WHERE i.start_time >= date('now', 'localtime', '-6 day') || 'T00:00:00'
+        AND i.start_time <  date('now', 'localtime', '+1 day') || 'T00:00:00';"
     )?;
     let rows = stmt.query_map([], |row| {
         Ok(Project {
