@@ -22,6 +22,9 @@ jobs:
           - os: macos-latest
             target: x86_64-apple-darwin
             asset_ext: tar.gz
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            asset_ext: tar.gz
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             asset_ext: zip
