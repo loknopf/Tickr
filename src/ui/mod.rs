@@ -1,19 +1,19 @@
+mod categories;
 mod dashboard;
 mod detail;
 mod helpers;
-mod categories;
 mod projects;
-mod tickrs;
 mod theme;
+mod tickrs;
 
 use chrono::Local;
 use ratatui::{
+    Frame,
     layout::{Constraint, Direction, Layout, Rect},
     prelude::Alignment,
     style::{Color, Modifier, Style},
     text::{Line, Span, Text},
-    widgets::{Block, Borders, BorderType, Clear, Paragraph},
-    Frame,
+    widgets::{Block, BorderType, Borders, Clear, Paragraph},
 };
 
 use crate::app::{App, AppView};
@@ -47,11 +47,16 @@ pub fn draw(frame: &mut Frame, app: &App) {
         .split(area);
 
     let header_lines = vec![Line::from(vec![
-        Span::styled("  Tickr  ", Style::default().fg(Color::Black).bg(Theme::primary())),
+        Span::styled(
+            "  Tickr  ",
+            Style::default().fg(Color::Black).bg(Theme::primary()),
+        ),
         Span::raw(" "),
         Span::styled(
             "time tracker",
-            Style::default().fg(Theme::secondary()).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Theme::secondary())
+                .add_modifier(Modifier::BOLD),
         ),
     ])];
     let header = Paragraph::new(Text::from(header_lines))
@@ -69,7 +74,9 @@ pub fn draw(frame: &mut Frame, app: &App) {
         Line::from(""),
         Line::from(Span::styled(
             format!("  {title}"),
-            Style::default().fg(Theme::accent()).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Theme::accent())
+                .add_modifier(Modifier::BOLD),
         )),
         Line::from(""),
     ];
@@ -119,14 +126,18 @@ fn render_edit_popup(frame: &mut Frame, popup: &crate::app::EditTickrPopup) {
     let mut lines = Vec::new();
     lines.push(Line::from(Span::styled(
         "Edit task",
-        Style::default().fg(Theme::accent()).add_modifier(Modifier::BOLD),
+        Style::default()
+            .fg(Theme::accent())
+            .add_modifier(Modifier::BOLD),
     )));
     lines.push(Line::from(""));
     lines.push(Line::from(vec![
         Span::styled("Label: ", Style::default().fg(Theme::dim())),
         Span::styled(
             popup.label.as_str(),
-            Style::default().fg(Theme::text()).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Theme::text())
+                .add_modifier(Modifier::BOLD),
         ),
     ]));
     lines.push(Line::from(""));
@@ -138,7 +149,9 @@ fn render_edit_popup(frame: &mut Frame, popup: &crate::app::EditTickrPopup) {
     for (index, option) in popup.categories.iter().enumerate() {
         let selected = index == popup.category_index;
         let marker_style = if selected {
-            Style::default().fg(Theme::selection_marker()).add_modifier(Modifier::BOLD)
+            Style::default()
+                .fg(Theme::selection_marker())
+                .add_modifier(Modifier::BOLD)
         } else {
             Style::default().fg(Theme::dim())
         };
@@ -179,12 +192,16 @@ fn render_new_category_popup(frame: &mut Frame, popup: &crate::app::NewCategoryP
     frame.render_widget(Clear, area);
 
     let name_style = if popup.field == crate::app::CategoryField::Name {
-        Style::default().fg(Theme::highlight()).add_modifier(Modifier::BOLD)
+        Style::default()
+            .fg(Theme::highlight())
+            .add_modifier(Modifier::BOLD)
     } else {
         Style::default().fg(Theme::text())
     };
     let color_style = if popup.field == crate::app::CategoryField::Color {
-        Style::default().fg(Theme::highlight()).add_modifier(Modifier::BOLD)
+        Style::default()
+            .fg(Theme::highlight())
+            .add_modifier(Modifier::BOLD)
     } else {
         Style::default().fg(Theme::text())
     };
@@ -192,7 +209,9 @@ fn render_new_category_popup(frame: &mut Frame, popup: &crate::app::NewCategoryP
     let mut lines = Vec::new();
     lines.push(Line::from(Span::styled(
         "New category",
-        Style::default().fg(Theme::accent()).add_modifier(Modifier::BOLD),
+        Style::default()
+            .fg(Theme::accent())
+            .add_modifier(Modifier::BOLD),
     )));
     lines.push(Line::from(""));
     lines.push(Line::from(vec![
@@ -241,32 +260,44 @@ fn render_new_tickr_popup(frame: &mut Frame, popup: &crate::app::NewTickrPopup) 
         .fg(Theme::selection_marker())
         .add_modifier(Modifier::BOLD);
     let label_style = if label_active {
-        Style::default().fg(Theme::highlight()).add_modifier(Modifier::BOLD)
+        Style::default()
+            .fg(Theme::highlight())
+            .add_modifier(Modifier::BOLD)
     } else {
         Style::default().fg(Theme::text())
     };
     let label_title_style = if label_active {
-        Style::default().fg(Theme::highlight()).add_modifier(Modifier::BOLD)
+        Style::default()
+            .fg(Theme::highlight())
+            .add_modifier(Modifier::BOLD)
     } else {
         Style::default().fg(Theme::dim())
     };
     let project_title_style = if project_active {
-        Style::default().fg(Theme::highlight()).add_modifier(Modifier::BOLD)
+        Style::default()
+            .fg(Theme::highlight())
+            .add_modifier(Modifier::BOLD)
     } else {
         Style::default().fg(Theme::dim())
     };
     let category_title_style = if category_active {
-        Style::default().fg(Theme::highlight()).add_modifier(Modifier::BOLD)
+        Style::default()
+            .fg(Theme::highlight())
+            .add_modifier(Modifier::BOLD)
     } else {
         Style::default().fg(Theme::dim())
     };
     let start_style = if start_active {
-        Style::default().fg(Theme::highlight()).add_modifier(Modifier::BOLD)
+        Style::default()
+            .fg(Theme::highlight())
+            .add_modifier(Modifier::BOLD)
     } else {
         Style::default().fg(Theme::text())
     };
     let start_title_style = if start_active {
-        Style::default().fg(Theme::highlight()).add_modifier(Modifier::BOLD)
+        Style::default()
+            .fg(Theme::highlight())
+            .add_modifier(Modifier::BOLD)
     } else {
         Style::default().fg(Theme::dim())
     };
@@ -274,7 +305,9 @@ fn render_new_tickr_popup(frame: &mut Frame, popup: &crate::app::NewTickrPopup) 
     let mut lines = Vec::new();
     lines.push(Line::from(Span::styled(
         "New task",
-        Style::default().fg(Theme::accent()).add_modifier(Modifier::BOLD),
+        Style::default()
+            .fg(Theme::accent())
+            .add_modifier(Modifier::BOLD),
     )));
     lines.push(Line::from(""));
     lines.push(Line::from(vec![
@@ -295,7 +328,9 @@ fn render_new_tickr_popup(frame: &mut Frame, popup: &crate::app::NewTickrPopup) 
             Style::default().fg(Theme::dim())
         };
         let name_style = if selected || project_active {
-            Style::default().fg(Theme::text()).add_modifier(Modifier::BOLD)
+            Style::default()
+                .fg(Theme::text())
+                .add_modifier(Modifier::BOLD)
         } else {
             Style::default().fg(Theme::text())
         };
@@ -333,10 +368,7 @@ fn render_new_tickr_popup(frame: &mut Frame, popup: &crate::app::NewTickrPopup) 
     lines.push(Line::from(vec![
         Span::styled(if start_active { "> " } else { "  " }, arrow_style),
         Span::styled("Start now: ", start_title_style),
-        Span::styled(
-            if popup.start_now { "yes" } else { "no" },
-            start_style,
-        ),
+        Span::styled(if popup.start_now { "yes" } else { "no" }, start_style),
     ]));
     lines.push(Line::from(""));
     lines.push(Line::from(Span::styled(
@@ -402,7 +434,8 @@ fn tabs_line(app: &App) -> Line<'_> {
             AppView::WorkedProjects => *view == AppView::WorkedProjects,
             _ => *view == app.view,
         };
-        let focused = app.focus_mode == crate::app::FocusMode::TabBar && app.selected_tab_index == index;
+        let focused =
+            app.focus_mode == crate::app::FocusMode::TabBar && app.selected_tab_index == index;
         let style = if active {
             Style::default()
                 .fg(Color::Black)
@@ -439,12 +472,20 @@ fn running_task_line(app: &App) -> Line<'_> {
             .map(|project| project.name.as_str())
             .unwrap_or("Unknown project");
         let duration = format_duration(now.signed_duration_since(interval.start_time));
-        format!("{project_name} > {} > Running {duration}", tickr.description)
+        format!(
+            "{project_name} > {} > Running {duration}",
+            tickr.description
+        )
     } else {
         "No task running".to_string()
     };
 
-    Line::from(Span::styled(text, Style::default().fg(Theme::active()).add_modifier(Modifier::BOLD)))
+    Line::from(Span::styled(
+        text,
+        Style::default()
+            .fg(Theme::active())
+            .add_modifier(Modifier::BOLD),
+    ))
 }
 
 fn keybinds_lines(app: &App) -> Vec<Line<'static>> {
@@ -453,7 +494,7 @@ fn keybinds_lines(app: &App) -> Vec<Line<'static>> {
     } else {
         "Tab: Switch to tab bar  h/p/t/w/c: Quick nav"
     };
-    
+
     let (primary, secondary) = match app.view {
         AppView::Dashboard => (
             "h: Home  p: Projects  t: Tasks  w: Worked  c: Categories",
@@ -475,10 +516,7 @@ fn keybinds_lines(app: &App) -> Vec<Line<'static>> {
             "Up/Down: Select  Enter: Open  Shift+Tab: Adjust Range",
             "r: Refresh  q: Quit",
         ),
-        AppView::Categories => (
-            "Up/Down: Select  n: New",
-            "esc: Back  r: Refresh  q: Quit",
-        ),
+        AppView::Categories => ("Up/Down: Select  n: New", "esc: Back  r: Refresh  q: Quit"),
         AppView::TickrDetail => (
             "space: Start/End  s: Stop  g: Project  e: Edit",
             "esc: Back  q: Quit",
@@ -489,13 +527,7 @@ fn keybinds_lines(app: &App) -> Vec<Line<'static>> {
             focus_hint,
             Style::default().fg(Theme::highlight()),
         )),
-        Line::from(Span::styled(
-            primary,
-            Style::default().fg(Theme::dim()),
-        )),
-        Line::from(Span::styled(
-            secondary,
-            Style::default().fg(Theme::dim()),
-        )),
+        Line::from(Span::styled(primary, Style::default().fg(Theme::dim()))),
+        Line::from(Span::styled(secondary, Style::default().fg(Theme::dim()))),
     ]
 }

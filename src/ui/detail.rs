@@ -4,8 +4,8 @@ use ratatui::{
     text::{Line, Span, Text},
 };
 
-use crate::app::App;
 use super::theme::Theme;
+use crate::app::App;
 
 use super::helpers::{format_duration, hex_to_color};
 
@@ -21,7 +21,10 @@ pub fn build_tickr_detail_text(app: &App) -> Text<'_> {
     let label_style = Style::default().fg(Theme::dim());
     let label = |name: &str| {
         let label_text = format!("{name}:");
-        Span::styled(format!("{label_text:width$}", width = LABEL_WIDTH), label_style)
+        Span::styled(
+            format!("{label_text:width$}", width = LABEL_WIDTH),
+            label_style,
+        )
     };
     let value = |text: &str| Span::raw(text.to_string());
 
@@ -84,7 +87,9 @@ pub fn build_tickr_detail_text(app: &App) -> Text<'_> {
         Line::from(vec![
             Span::styled(
                 "Task",
-                Style::default().fg(Theme::primary()).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(Theme::primary())
+                    .add_modifier(Modifier::BOLD),
             ),
             Span::raw("  "),
             Span::styled(
@@ -97,7 +102,12 @@ pub fn build_tickr_detail_text(app: &App) -> Text<'_> {
         category_line,
         Line::from(vec![
             label("Status"),
-            Span::styled(status, Style::default().fg(status_color).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                status,
+                Style::default()
+                    .fg(status_color)
+                    .add_modifier(Modifier::BOLD),
+            ),
         ]),
         Line::from(vec![label("First"), value(&first_start)]),
         Line::from(vec![
@@ -106,12 +116,12 @@ pub fn build_tickr_detail_text(app: &App) -> Text<'_> {
         ]),
         Line::from(vec![label("Elapsed"), value(&elapsed)]),
         Line::from(""),
-        Line::from(vec![
-            Span::styled(
-                format!("Intervals ({})", tickr.intervals.len()),
-                Style::default().fg(Theme::accent()).add_modifier(Modifier::BOLD),
-            ),
-        ]),
+        Line::from(vec![Span::styled(
+            format!("Intervals ({})", tickr.intervals.len()),
+            Style::default()
+                .fg(Theme::accent())
+                .add_modifier(Modifier::BOLD),
+        )]),
     ];
 
     if tickr.intervals.is_empty() {
@@ -128,34 +138,27 @@ pub fn build_tickr_detail_text(app: &App) -> Text<'_> {
                 let duration = format_duration(now.signed_duration_since(interval.start_time));
                 (end, duration)
             };
-            if tickr.intervals.len() > 5{
+            if tickr.intervals.len() > 5 {
                 if index < 2 || index >= tickr.intervals.len() - 2 {
                     lines.push(Line::from(vec![
                         Span::raw(format!("  {:>2}) {start} -> {end} ", index + 1)),
-                        Span::styled(
-                            format!("({duration})"),
-                            Style::default().fg(Theme::dim()),
-                        ),
+                        Span::styled(format!("({duration})"), Style::default().fg(Theme::dim())),
                     ]));
                 } else if index == 2 {
-                    lines.push(Line::from(vec![
-                        Span::raw("     ..."),
-                    ]));
+                    lines.push(Line::from(vec![Span::raw("     ...")]));
                 }
-            }else{
+            } else {
                 lines.push(Line::from(vec![
                     Span::raw(format!("  {:>2}) {start} -> {end} ", index + 1)),
-                    Span::styled(
-                        format!("({duration})"),
-                        Style::default().fg(Theme::dim()),
-                    ),
+                    Span::styled(format!("({duration})"), Style::default().fg(Theme::dim())),
                 ]));
             }
-            
         }
     }
 
     lines.push(Line::from(""));
-    lines.push(Line::from("space: Start/End   s: Stop running   g: Project   e: Edit   esc: Back"));
+    lines.push(Line::from(
+        "space: Start/End   s: Stop running   g: Project   e: Edit   esc: Back",
+    ));
     Text::from(lines)
 }

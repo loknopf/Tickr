@@ -14,7 +14,10 @@ pub fn clamp_name(value: &str, width: usize) -> String {
     if value_len <= width {
         return format!("{value:<width$}", width = width);
     }
-    let trimmed = value.chars().take(width.saturating_sub(2)).collect::<String>();
+    let trimmed = value
+        .chars()
+        .take(width.saturating_sub(2))
+        .collect::<String>();
     format!("{trimmed}..")
 }
 

@@ -11,7 +11,7 @@ pub type IntervalId = u32;
 pub(crate) struct Project {
     pub id: Option<ProjectId>,
     pub name: String,
-    pub created_at: DateTime<Local>
+    pub created_at: DateTime<Local>,
 }
 
 pub(crate) enum ProjectQuery {

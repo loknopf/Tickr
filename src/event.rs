@@ -38,7 +38,4 @@ impl EventHandler {
         }
         Ok(())
     }
-
 }
-
-

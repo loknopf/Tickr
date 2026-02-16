@@ -7,7 +7,11 @@ use rusqlite::Connection;
 use crate::{db, types};
 
 #[derive(Parser)]
-#[command(name = "tickr", version, about = "Tickr - A terminal-based time tracker")]
+#[command(
+    name = "tickr",
+    version,
+    about = "Tickr - A terminal-based time tracker"
+)]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Option<Command>,
@@ -72,8 +76,20 @@ pub fn run(command: Command, conn: &Connection) -> Result<()> {
                     category,
                 },
         } => handle_task_add(project, description, start, end, category, conn)?,
-        Command::Task { command: TaskCommand::Switch { project, description } } => handle_task_switch(project, description, conn)?,
-        Command::Task { command: TaskCommand::Start { project, description } } => handle_task_switch(project, description, conn)?, // Starting a task is the same as switching to it if no other is currently running
+        Command::Task {
+            command:
+                TaskCommand::Switch {
+                    project,
+                    description,
+                },
+        } => handle_task_switch(project, description, conn)?,
+        Command::Task {
+            command:
+                TaskCommand::Start {
+                    project,
+                    description,
+                },
+        } => handle_task_switch(project, description, conn)?, // Starting a task is the same as switching to it if no other is currently running
         Command::Category { name, color_opt } => handle_category_add(name, color_opt, conn)?,
     }
     Ok(())
@@ -183,9 +199,14 @@ fn handle_task_switch(project: String, description: String, conn: &Connection) -
         return Ok(());
     }
     let tickr = tickr.unwrap();
-    let tickr_to_stop = db::query_tickr(types::TickrQuery::ByProjectId(project_id), conn)?.into_iter().find(|t| t.intervals.iter().any(|i| i.end_time.is_none()));
+    let tickr_to_stop = db::query_tickr(types::TickrQuery::ByProjectId(project_id), conn)?
+        .into_iter()
+        .find(|t| t.intervals.iter().any(|i| i.end_time.is_none()));
     if let Some(old_tickr) = tickr_to_stop {
-        println!("Stopping currently running task '{}'", old_tickr.description);
+        println!(
+            "Stopping currently running task '{}'",
+            old_tickr.description
+        );
         db::end_tickr(old_tickr.id.unwrap(), conn)?;
     }
     db::start_tickr(tickr.id.unwrap(), conn)?;

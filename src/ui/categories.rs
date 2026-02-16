@@ -3,9 +3,9 @@ use ratatui::{
     text::{Line, Span, Text},
 };
 
-use crate::app::App;
 use super::helpers::hex_to_color;
 use super::theme::Theme;
+use crate::app::App;
 
 pub fn build_categories_text(app: &App) -> Text<'_> {
     if let Some(status) = &app.status {
@@ -22,7 +22,9 @@ pub fn build_categories_text(app: &App) -> Text<'_> {
         .map(|(index, category)| {
             let selected = index == app.selected_category_index;
             let marker_style = if selected {
-                Style::default().fg(Theme::selection_marker()).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(Theme::selection_marker())
+                    .add_modifier(Modifier::BOLD)
             } else {
                 Style::default().fg(Theme::dim())
             };
@@ -33,10 +35,7 @@ pub fn build_categories_text(app: &App) -> Text<'_> {
                 Span::styled(if selected { "> " } else { "  " }, marker_style),
                 Span::styled(category.name.as_str(), name_style),
                 Span::raw("  "),
-                Span::styled(
-                    category.color.as_str(),
-                    Style::default().fg(Theme::dim()),
-                ),
+                Span::styled(category.color.as_str(), Style::default().fg(Theme::dim())),
             ])
         })
         .collect::<Vec<_>>();

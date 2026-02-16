@@ -22,8 +22,13 @@ pub fn query_intervals_by_tickr_id(tickr_id: u32, conn: &Connection) -> Result<V
     Ok(result)
 }
 
-pub fn query_intervals_by_time_range(from: DateTime<Local>, to: DateTime<Local>, conn: &Connection) -> Result<Vec<Interval>, rusqlite::Error> {
-    let intervals = conn.prepare("SELECT * FROM intervals WHERE start_time >= ?1 AND end_time <= ?2")?;
+pub fn query_intervals_by_time_range(
+    from: DateTime<Local>,
+    to: DateTime<Local>,
+    conn: &Connection,
+) -> Result<Vec<Interval>, rusqlite::Error> {
+    let intervals =
+        conn.prepare("SELECT * FROM intervals WHERE start_time >= ?1 AND end_time <= ?2")?;
     let mut stmt = intervals;
     let rows = stmt.query_map([from.to_rfc3339(), to.to_rfc3339()], |row| {
         Ok(Interval {

@@ -74,13 +74,14 @@ pub fn query_project_by_id(id: u32, conn: &Connection) -> Result<Option<Project>
 }
 
 pub fn query_project_worked_on_today(conn: &Connection) -> Result<Vec<Project>> {
-    let mut stmt = conn.prepare("
+    let mut stmt = conn.prepare(
+        "
         SELECT DISTINCT p.id, p.name, p.created_at
         FROM projects p
         JOIN entries e ON e.project_id = p.id
         JOIN intervals i ON i.entry_id = e.id
         WHERE i.start_time >= date('now', 'localtime') || 'T00:00:00'
-        AND i.start_time <  date('now', 'localtime', '+1 day') || 'T00:00:00';"
+        AND i.start_time <  date('now', 'localtime', '+1 day') || 'T00:00:00';",
     )?;
     let rows = stmt.query_map([], |row| {
         Ok(Project {
@@ -99,13 +100,14 @@ pub fn query_project_worked_on_today(conn: &Connection) -> Result<Vec<Project>> 
 }
 
 pub fn query_project_worked_on_week(conn: &Connection) -> Result<Vec<Project>> {
-    let mut stmt = conn.prepare("
+    let mut stmt = conn.prepare(
+        "
         SELECT DISTINCT p.id, p.name, p.created_at
         FROM projects p
         JOIN entries e ON e.project_id = p.id
         JOIN intervals i ON i.entry_id = e.id
         WHERE i.start_time >= date('now', 'localtime', '-6 day') || 'T00:00:00'
-        AND i.start_time <  date('now', 'localtime', '+1 day') || 'T00:00:00';"
+        AND i.start_time <  date('now', 'localtime', '+1 day') || 'T00:00:00';",
     )?;
     let rows = stmt.query_map([], |row| {
         Ok(Project {
@@ -128,5 +130,3 @@ pub fn check_project_exists(name: &str, conn: &Connection) -> Result<bool> {
     let count: i64 = stmt.query_row([name], |row| row.get(0))?;
     Ok(count > 0)
 }
-
-

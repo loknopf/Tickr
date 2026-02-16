@@ -98,9 +98,6 @@ fn migrate_entries_add_category(conn: &Connection) -> Result<()> {
         }
     }
 
-    conn.execute(
-        "ALTER TABLE entries ADD COLUMN category_id INTEGER",
-        [],
-    )?;
+    conn.execute("ALTER TABLE entries ADD COLUMN category_id INTEGER", [])?;
     Ok(())
 }

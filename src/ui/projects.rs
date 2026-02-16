@@ -4,9 +4,9 @@ use ratatui::{
     text::{Line, Span, Text},
 };
 
-use crate::app::{App, WorkedRange};
-use super::theme::Theme;
 use super::helpers::{clamp_name, format_duration};
+use super::theme::Theme;
+use crate::app::{App, WorkedRange};
 
 pub fn build_projects_text(app: &App) -> Text<'_> {
     if let Some(status) = &app.status {
@@ -17,16 +17,18 @@ pub fn build_projects_text(app: &App) -> Text<'_> {
     }
     let mut lines = Vec::new();
     lines.push(Line::from(Span::styled(
-        format!("  {:<24} {:>8} {:>5} {:>5}", "Project", "Total", "End", "Open"),
-        Style::default().fg(Theme::secondary()).add_modifier(Modifier::BOLD),
+        format!(
+            "  {:<24} {:>8} {:>5} {:>5}",
+            "Project", "Total", "End", "Open"
+        ),
+        Style::default()
+            .fg(Theme::secondary())
+            .add_modifier(Modifier::BOLD),
     )));
     lines.push(Line::from(Span::styled(
         format!(
             "  {:<24} {:>8} {:>5} {:>5}",
-            "------------------------",
-            "--------",
-            "-----",
-            "-----"
+            "------------------------", "--------", "-----", "-----"
         ),
         Style::default().fg(Theme::dim()),
     )));
@@ -43,7 +45,9 @@ pub fn build_projects_text(app: &App) -> Text<'_> {
             let open_text = format!("{:>5}", summary.open);
             let selected = index == app.selected_project_index;
             let name_style = if selected {
-                Style::default().fg(Theme::highlight()).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(Theme::highlight())
+                    .add_modifier(Modifier::BOLD)
             } else {
                 Style::default()
             };
@@ -87,11 +91,15 @@ pub fn build_worked_projects_text(app: &App) -> Text<'_> {
     let mut lines = Vec::new();
     lines.push(Line::from(Span::styled(
         format!("  Worked on: {}", worked_range_label(app.worked_range)),
-        Style::default().fg(Theme::secondary()).add_modifier(Modifier::BOLD),
+        Style::default()
+            .fg(Theme::secondary())
+            .add_modifier(Modifier::BOLD),
     )));
     lines.push(Line::from(Span::styled(
         format!("  {:<28}", "Project"),
-        Style::default().fg(Theme::secondary()).add_modifier(Modifier::BOLD),
+        Style::default()
+            .fg(Theme::secondary())
+            .add_modifier(Modifier::BOLD),
     )));
     lines.push(Line::from(Span::styled(
         format!("  {:<28}", "----------------------------"),
@@ -106,7 +114,9 @@ pub fn build_worked_projects_text(app: &App) -> Text<'_> {
             let name = clamp_name(project.name.as_str(), 28);
             let selected = index == app.selected_worked_project_index;
             let name_style = if selected {
-                Style::default().fg(Theme::highlight()).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(Theme::highlight())
+                    .add_modifier(Modifier::BOLD)
             } else {
                 Style::default()
             };

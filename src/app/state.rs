@@ -6,7 +6,7 @@ use rusqlite::Connection;
 use crate::db;
 use crate::types::{CategoryId, Project, ProjectId, Tickr, TickrCategory, TickrId};
 
-use super::{AppEvent, AppView, TABS, FocusMode, ProjectSummary, WorkedRange};
+use super::{AppEvent, AppView, FocusMode, ProjectSummary, TABS, WorkedRange};
 
 /// The top-level application state.
 pub struct App {
@@ -121,16 +121,20 @@ impl App {
             Ok(projects) => projects,
             Err(_) => Vec::new(),
         };
-        let running_tickr = match tickrs.iter().find(|tickr| {
+        let running_tickr = match tickrs
+            .iter()
+            .find(|tickr| {
                 tickr
                     .intervals
                     .last()
                     .map(|interval| interval.end_time.is_none())
                     .unwrap_or(false)
-            }).and_then(|tickr| tickr.id) {
-                Some(id) => Some(id),
-                None => None,
-            };
+            })
+            .and_then(|tickr| tickr.id)
+        {
+            Some(id) => Some(id),
+            None => None,
+        };
         let mut app = Self {
             running: true,
             running_tickr,
@@ -159,11 +163,11 @@ impl App {
             new_category_popup: None,
             new_tickr_popup: None,
         };
-        
+
         // Initialize categories and project summaries
         app.refresh_categories_for_tickrs();
         app.refresh_project_summaries();
-        
+
         app
     }
 
@@ -290,7 +294,11 @@ impl App {
             self.view = view;
             self.load_content_for_view();
             // Update selected_tab_index to match the current view
-            if let Some(index) = TABS.iter().position(|v| *v == self.view || (self.view == AppView::ProjectTickrs && *v == AppView::Tickrs) || (self.view == AppView::TickrDetail && *v == AppView::Tickrs)) {
+            if let Some(index) = TABS.iter().position(|v| {
+                *v == self.view
+                    || (self.view == AppView::ProjectTickrs && *v == AppView::Tickrs)
+                    || (self.view == AppView::TickrDetail && *v == AppView::Tickrs)
+            }) {
                 self.selected_tab_index = index;
             }
         }
@@ -317,7 +325,6 @@ impl App {
     }
 
     fn navigate_tab_right(&mut self) {
-        
         self.selected_tab_index = (self.selected_tab_index + 1) % TABS.len();
     }
 
@@ -491,7 +498,12 @@ impl App {
             self.tickrs = tickrs;
             self.running_tickr = None;
             for tickr in &self.tickrs {
-                if tickr.intervals.last().map(|interval| interval.end_time.is_none()).unwrap_or(false) {
+                if tickr
+                    .intervals
+                    .last()
+                    .map(|interval| interval.end_time.is_none())
+                    .unwrap_or(false)
+                {
                     self.running_tickr = tickr.id;
                     break;
                 }
@@ -573,8 +585,7 @@ impl App {
                 self.categories_list = categories;
                 self.clear_status();
                 if self.selected_category_index >= self.categories_list.len() {
-                    self.selected_category_index =
-                        self.categories_list.len().saturating_sub(1);
+                    self.selected_category_index = self.categories_list.len().saturating_sub(1);
                 }
             }
             Err(err) => {
@@ -659,7 +670,8 @@ impl App {
                 if self.projects.is_empty() {
                     return;
                 }
-                self.selected_project_index = (self.selected_project_index + 1) % self.projects.len();
+                self.selected_project_index =
+                    (self.selected_project_index + 1) % self.projects.len();
             }
             AppView::Tickrs | AppView::ProjectTickrs => {
                 if self.tickrs.is_empty() {
@@ -706,7 +718,8 @@ impl App {
     }
 
     fn open_selected_tickr(&mut self) {
-        if !matches!(self.view, AppView::Tickrs | AppView::ProjectTickrs) || self.tickrs.is_empty() {
+        if !matches!(self.view, AppView::Tickrs | AppView::ProjectTickrs) || self.tickrs.is_empty()
+        {
             return;
         }
         let tickr = self.tickrs[self.selected_tickr_index].clone();
@@ -718,11 +731,11 @@ impl App {
 
     fn open_selected(&mut self) {
         match self.view {
-            AppView::Dashboard => {},
+            AppView::Dashboard => {}
             AppView::Projects => self.open_selected_project(),
             AppView::Tickrs | AppView::ProjectTickrs => self.open_selected_tickr(),
             AppView::WorkedProjects => self.open_selected_worked_project(),
-            AppView::Categories => {},
+            AppView::Categories => {}
             AppView::TickrDetail => {}
         }
     }
@@ -874,12 +887,9 @@ impl App {
             .get(popup.category_index)
             .and_then(|option| option.id);
 
-        if let Err(err) = db::update_tickr_details(
-            popup.tickr_id,
-            popup.label.clone(),
-            category_id,
-            &self.db,
-        ) {
+        if let Err(err) =
+            db::update_tickr_details(popup.tickr_id, popup.label.clone(), category_id, &self.db)
+        {
             self.status = Some(format!("Failed to update task: {err}"));
             self.edit_popup = Some(popup);
             return;
@@ -1028,7 +1038,8 @@ impl App {
             .intervals
             .last()
             .map(|interval| interval.end_time.is_none())
-            .unwrap_or(false) && tickr.id == self.running_tickr;
+            .unwrap_or(false)
+            && tickr.id == self.running_tickr;
         let result = if is_current_running {
             db::end_tickr(id, &self.db)
         } else {
@@ -1048,7 +1059,7 @@ impl App {
         if let Err(err) = result {
             self.status = Some(format!("Failed to update task: {err}"));
             return;
-        }else{
+        } else {
             self.running_tickr = Some(id);
         }
 
@@ -1114,9 +1125,7 @@ impl App {
     }
 
     pub fn category_for_tickr(&self, tickr: &Tickr) -> Option<&TickrCategory> {
-        tickr
-            .category_id
-            .and_then(|id| self.categories.get(&id))
+        tickr.category_id.and_then(|id| self.categories.get(&id))
     }
 
     fn current_tickr(&self) -> Option<&Tickr> {
@@ -1191,7 +1200,11 @@ impl App {
         self.navigate_to(AppView::ProjectTickrs);
         self.load_project_tickrs();
         if let Some(tickr_id) = highlight_tickr_id {
-            if let Some(index) = self.tickrs.iter().position(|item| item.id == Some(tickr_id)) {
+            if let Some(index) = self
+                .tickrs
+                .iter()
+                .position(|item| item.id == Some(tickr_id))
+            {
                 self.selected_tickr_index = index;
             }
         }

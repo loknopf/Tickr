@@ -4,8 +4,8 @@ mod color;
 mod db;
 mod event;
 mod tui;
-mod ui;
 mod types;
+mod ui;
 
 use anyhow::Result;
 use clap::Parser;

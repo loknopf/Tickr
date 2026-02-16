@@ -4,8 +4,9 @@ use ratatui::{
     text::{Line, Span, Text},
 };
 
-use crate::app::App;use super::theme::Theme;
 use super::helpers::{format_duration, hex_to_color};
+use super::theme::Theme;
+use crate::app::App;
 
 pub fn build_tickrs_text(app: &App, show_selection: bool) -> Text<'_> {
     if let Some(status) = &app.status {
@@ -24,12 +25,13 @@ pub fn build_tickrs_text(app: &App, show_selection: bool) -> Text<'_> {
                 "0 intervals, --:--:--".to_string()
             } else {
                 let now = Local::now();
-                let total_duration = intervals
-                    .iter()
-                    .fold(Duration::seconds(0), |acc, interval| {
-                        let end_time = interval.end_time.unwrap_or(now);
-                        acc + end_time.signed_duration_since(interval.start_time)
-                    });
+                let total_duration =
+                    intervals
+                        .iter()
+                        .fold(Duration::seconds(0), |acc, interval| {
+                            let end_time = interval.end_time.unwrap_or(now);
+                            acc + end_time.signed_duration_since(interval.start_time)
+                        });
                 let elapsed = format_duration(total_duration);
                 let count = intervals.len();
                 let label = if count == 1 { "interval" } else { "intervals" };
@@ -37,7 +39,9 @@ pub fn build_tickrs_text(app: &App, show_selection: bool) -> Text<'_> {
             };
             let selected = show_selection && index == app.selected_tickr_index;
             let line_style = if selected {
-                Style::default().fg(Theme::highlight()).add_modifier(Modifier::BOLD)
+                Style::default()
+                    .fg(Theme::highlight())
+                    .add_modifier(Modifier::BOLD)
             } else {
                 Style::default()
             };
