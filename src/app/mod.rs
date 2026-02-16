@@ -9,7 +9,6 @@ pub use state::{
     NewCategoryPopup,
     NewTickrField,
     NewTickrPopup,
-    ProjectOption,
 };
 
 /// Possible input events the app reacts to.
