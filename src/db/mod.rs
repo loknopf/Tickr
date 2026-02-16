@@ -12,11 +12,12 @@ use rusqlite::Connection;
 pub use category::{create_category, query_categories, query_category_by_id, query_category_id};
 pub use intervals::create_interval;
 pub use project::{
-    check_project_exists, create_project, query_project, query_project_by_id,
+    check_project_exists, create_project, delete_project, query_project, query_project_by_id,
     query_project_worked_on_today, query_project_worked_on_week, query_projects,
 };
 pub use tickr::{
-    create_tickr, end_tickr, query_tickr, query_tickr_by_id, start_tickr, update_tickr_details,
+    create_tickr, delete_tickr, end_running_tickr, end_tickr, query_tickr, query_tickr_by_id,
+    start_tickr, update_tickr_details,
 };
 
 /// Opens (or creates) the SQLite database and runs migrations.

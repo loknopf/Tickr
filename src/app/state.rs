@@ -36,6 +36,7 @@ pub struct App {
     pub edit_popup: Option<EditTickrPopup>,
     pub new_category_popup: Option<NewCategoryPopup>,
     pub new_tickr_popup: Option<NewTickrPopup>,
+    pub confirm_popup: Option<ConfirmPopup>,
 }
 
 #[derive(Clone, Debug)]
@@ -89,6 +90,19 @@ pub struct NewTickrPopup {
     pub categories: Vec<CategoryOption>,
     pub start_now: bool,
     pub field: NewTickrField,
+}
+
+#[derive(Clone, Debug)]
+pub struct ConfirmPopup {
+    pub message: String,
+    pub on_confirm: ConfirmAction,
+}
+
+#[derive(Clone, Debug)]
+pub enum ConfirmAction {
+    DeleteTickr(TickrId),
+    DeleteProject(ProjectId),
+    StopAllTasks,
 }
 
 impl EditTickrPopup {
@@ -162,6 +176,7 @@ impl App {
             edit_popup: None,
             new_category_popup: None,
             new_tickr_popup: None,
+            confirm_popup: None,
         };
 
         // Initialize categories and project summaries
@@ -188,6 +203,10 @@ impl App {
     }
 
     fn handle_key(&mut self, key: KeyCode) {
+        if self.confirm_popup.is_some() {
+            self.handle_confirm_key(key);
+            return;
+        }
         if self.edit_popup.is_some() {
             self.handle_edit_key(key);
             return;
@@ -202,6 +221,7 @@ impl App {
         }
 
         match key {
+            KeyCode::Char('?') => self.toggle_help(),
             KeyCode::Char('q') => self.running = false,
             KeyCode::Char('h') => {
                 self.navigate_to(AppView::Dashboard);
@@ -246,6 +266,7 @@ impl App {
                 AppView::WorkedProjects => self.load_worked_projects(),
                 AppView::Categories => self.load_categories(),
                 AppView::TickrDetail => self.refresh_tickr_detail(),
+                AppView::Help => {} // Help screen doesn't need refresh
             },
             KeyCode::Left => {
                 if self.focus_mode == FocusMode::TabBar {
@@ -313,6 +334,7 @@ impl App {
             AppView::WorkedProjects => self.load_worked_projects(),
             AppView::Categories => self.load_categories(),
             AppView::TickrDetail => self.refresh_tickr_detail(),
+            AppView::Help => {} // Help screen has static content
         }
     }
 
@@ -490,6 +512,7 @@ impl App {
             AppView::WorkedProjects => self.load_worked_projects(),
             AppView::Categories => self.load_categories(),
             AppView::TickrDetail => self.refresh_tickr_detail(),
+            AppView::Help => {} // Help screen has static content
         }
     }
 
@@ -737,6 +760,7 @@ impl App {
             AppView::WorkedProjects => self.open_selected_worked_project(),
             AppView::Categories => {}
             AppView::TickrDetail => {}
+            AppView::Help => {}
         }
     }
 
@@ -1265,6 +1289,124 @@ impl App {
             }
         }
     }
+
+    fn toggle_help(&mut self) {
+        if self.view == AppView::Help {
+            self.go_back();
+        } else {
+            self.navigate_to(AppView::Help);
+        }
+    }
+
+    fn handle_confirm_key(&mut self, key: KeyCode) {
+        match key {
+            KeyCode::Char('y') | KeyCode::Char('Y') | KeyCode::Enter => {
+                if let Some(popup) = self.confirm_popup.take() {
+                    self.execute_confirm_action(popup.on_confirm);
+                }
+            }
+            KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Esc => {
+                self.confirm_popup = None;
+            }
+            _ => {}
+        }
+    }
+
+    fn execute_confirm_action(&mut self, action: ConfirmAction) {
+        match action {
+            ConfirmAction::DeleteTickr(tickr_id) => {
+                match db::delete_tickr(tickr_id, &self.db) {
+                    Ok(_) => {
+                        self.status = Some("Task deleted".to_string());
+                        self.refresh_view_data();
+                        if self.view == AppView::TickrDetail {
+                            self.go_back();
+                        }
+                    }
+                    Err(err) => {
+                        self.status = Some(format!("Failed to delete task: {err}"));
+                    }
+                }
+            }
+            ConfirmAction::DeleteProject(project_id) => {
+                match db::delete_project(project_id, &self.db) {
+                    Ok(_) => {
+                        self.status = Some("Project deleted".to_string());
+                        self.refresh_view_data();
+                        if self.view == AppView::ProjectTickrs {
+                            self.go_back();
+                        }
+                    }
+                    Err(err) => {
+                        self.status = Some(format!("Failed to delete project: {err}"));
+                    }
+                }
+            }
+            ConfirmAction::StopAllTasks => {
+                if let Some(running_id) = self.running_tickr {
+                    match db::end_running_tickr(running_id, &self.db) {
+                        Ok(_) => {
+                            self.running_tickr = None;
+                            self.status = Some("All tasks stopped".to_string());
+                            self.refresh_view_data();
+                        }
+                        Err(err) => {
+                            self.status = Some(format!("Failed to stop task: {err}"));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn get_daily_summary(&self) -> DailySummary {
+        let today = chrono::Local::now().date_naive();
+        let mut total_seconds = 0i64;
+        let mut task_count = 0;
+        let mut active_projects = HashSet::new();
+
+        if let Ok(tickrs) = db::query_tickr(crate::types::TickrQuery::All, &self.db) {
+            for tickr in tickrs {
+                for interval in &tickr.intervals {
+                    let interval_date = interval.start_time.date_naive();
+                    if interval_date == today {
+                        task_count += 1;
+                        active_projects.insert(tickr.project_id);
+                        
+                        if let Some(end_time) = interval.end_time {
+                            let seconds = end_time
+                                .signed_duration_since(interval.start_time)
+                                .num_seconds();
+                            if seconds > 0 {
+                                total_seconds += seconds;
+                            }
+                        } else {
+                            // Running task
+                            let seconds = chrono::Local::now()
+                                .signed_duration_since(interval.start_time)
+                                .num_seconds();
+                            if seconds > 0 {
+                                total_seconds += seconds;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        DailySummary {
+            total_seconds,
+            task_count,
+            project_count: active_projects.len(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct DailySummary {
+    pub total_seconds: i64,
+    pub task_count: usize,
+    pub project_count: usize,
 }
 
 fn normalize_hex_color(value: &str) -> Option<String> {

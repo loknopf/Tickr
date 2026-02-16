@@ -130,3 +130,8 @@ pub fn check_project_exists(name: &str, conn: &Connection) -> Result<bool> {
     let count: i64 = stmt.query_row([name], |row| row.get(0))?;
     Ok(count > 0)
 }
+
+pub fn delete_project(id: u32, conn: &Connection) -> Result<()> {
+    conn.execute("DELETE FROM projects WHERE id = ?1", [id])?;
+    Ok(())
+}

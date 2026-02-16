@@ -3,7 +3,8 @@ mod state;
 use crossterm::event::KeyCode;
 
 pub use state::{
-    App, CategoryField, EditTickrPopup, NewCategoryPopup, NewTickrField, NewTickrPopup,
+    App, CategoryField, ConfirmAction, ConfirmPopup, DailySummary, EditTickrPopup,
+    NewCategoryPopup, NewTickrField, NewTickrPopup,
 };
 
 /// Possible input events the app reacts to.
@@ -27,6 +28,7 @@ pub enum AppView {
     WorkedProjects,
     Categories,
     TickrDetail,
+    Help,
 }
 
 const TABS: [AppView; 5] = [

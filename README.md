@@ -5,10 +5,14 @@ Tickr is a terminal-based time tracker with a TUI and a small CLI for quick data
 ## Features
 
 - TUI mode for browsing and tracking time
+- Comprehensive dashboard with daily statistics
+- Interactive help screen (press `?`)
 - Detail view edit popup (label + category)
 - Categories tab with in-app category creation
 - CLI commands to add projects, tasks, and categories
 - SQLite storage with automatic migrations
+- Real-time task tracking with duration display
+- Color-coded categories for visual organization
 
 ## Install
 
@@ -66,6 +70,7 @@ cargo run
 
 ### TUI Controls
 
+- `?` Help screen
 - `p` Projects tab
 - `t` Tickrs tab
 - `w` Worked tab

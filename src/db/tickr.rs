@@ -173,3 +173,12 @@ pub fn update_tickr_details(
     )?;
     Ok(())
 }
+
+pub fn delete_tickr(id: TickrId, conn: &Connection) -> Result<()> {
+    conn.execute("DELETE FROM entries WHERE id = ?1", [id])?;
+    Ok(())
+}
+
+pub fn end_running_tickr(id: TickrId, conn: &Connection) -> Result<()> {
+    end_tickr(id, conn)
+}

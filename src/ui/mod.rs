@@ -35,6 +35,7 @@ pub fn draw(frame: &mut Frame, app: &App) {
         AppView::WorkedProjects => (" Worked ", projects::build_worked_projects_text(app)),
         AppView::Categories => (" Categories ", categories::build_categories_text(app)),
         AppView::TickrDetail => (" Task ", detail::build_tickr_detail_text(app)),
+        AppView::Help => (" Help ", build_help_text()),
     };
 
     let layout = Layout::default()
@@ -116,6 +117,9 @@ pub fn draw(frame: &mut Frame, app: &App) {
     }
     if let Some(popup) = &app.new_tickr_popup {
         render_new_tickr_popup(frame, popup);
+    }
+    if let Some(popup) = &app.confirm_popup {
+        render_confirm_popup(frame, popup);
     }
 }
 
@@ -498,28 +502,32 @@ fn keybinds_lines(app: &App) -> Vec<Line<'static>> {
     let (primary, secondary) = match app.view {
         AppView::Dashboard => (
             "h: Home  p: Projects  t: Tasks  w: Worked  c: Categories",
-            "r: Refresh  q: Quit",
+            "r: Refresh  ?: Help  q: Quit",
         ),
         AppView::Projects => (
             "Up/Down: Select  Enter: Open  n: New task",
-            "r: Refresh  q: Quit",
+            "r: Refresh  ?: Help  q: Quit",
         ),
         AppView::Tickrs => (
             "Up/Down: Select  Enter: Detail  space: Start/End",
-            "r: Refresh  q: Quit",
+            "r: Refresh  ?: Help  q: Quit",
         ),
         AppView::ProjectTickrs => (
             "Up/Down: Select  Enter: Detail  space: Start/End  n: New task",
-            "esc: Back  r: Refresh  q: Quit",
+            "esc: Back  r: Refresh  ?: Help  q: Quit",
         ),
         AppView::WorkedProjects => (
             "Up/Down: Select  Enter: Open  Shift+Tab: Adjust Range",
-            "r: Refresh  q: Quit",
+            "r: Refresh  ?: Help  q: Quit",
         ),
-        AppView::Categories => ("Up/Down: Select  n: New", "esc: Back  r: Refresh  q: Quit"),
+        AppView::Categories => ("Up/Down: Select  n: New", "esc: Back  r: Refresh  ?: Help  q: Quit"),
         AppView::TickrDetail => (
             "space: Start/End  s: Stop  g: Project  e: Edit",
-            "esc: Back  q: Quit",
+            "esc: Back  ?: Help  q: Quit",
+        ),
+        AppView::Help => (
+            "Press ? or ESC to close this help screen",
+            "",
         ),
     };
     vec![
@@ -530,4 +538,174 @@ fn keybinds_lines(app: &App) -> Vec<Line<'static>> {
         Line::from(Span::styled(primary, Style::default().fg(Theme::dim()))),
         Line::from(Span::styled(secondary, Style::default().fg(Theme::dim()))),
     ]
+}
+
+fn build_help_text() -> Text<'static> {
+    let mut lines = Vec::new();
+    
+    lines.push(Line::from(Span::styled(
+        "Keyboard Shortcuts",
+        Style::default()
+            .fg(Theme::accent())
+            .add_modifier(Modifier::BOLD),
+    )));
+    lines.push(Line::from(""));
+    
+    lines.push(Line::from(Span::styled(
+        "Global Navigation",
+        Style::default().fg(Theme::highlight()).add_modifier(Modifier::BOLD),
+    )));
+    lines.push(Line::from(vec![
+        Span::styled("  h", Style::default().fg(Theme::selection_marker()).add_modifier(Modifier::BOLD)),
+        Span::styled("  Dashboard/Home", Style::default().fg(Theme::text())),
+    ]));
+    lines.push(Line::from(vec![
+        Span::styled("  p", Style::default().fg(Theme::selection_marker()).add_modifier(Modifier::BOLD)),
+        Span::styled("  Projects view", Style::default().fg(Theme::text())),
+    ]));
+    lines.push(Line::from(vec![
+        Span::styled("  t", Style::default().fg(Theme::selection_marker()).add_modifier(Modifier::BOLD)),
+        Span::styled("  Tasks/Tickrs view", Style::default().fg(Theme::text())),
+    ]));
+    lines.push(Line::from(vec![
+        Span::styled("  w", Style::default().fg(Theme::selection_marker()).add_modifier(Modifier::BOLD)),
+        Span::styled("  Worked projects view", Style::default().fg(Theme::text())),
+    ]));
+    lines.push(Line::from(vec![
+        Span::styled("  c", Style::default().fg(Theme::selection_marker()).add_modifier(Modifier::BOLD)),
+        Span::styled("  Categories view", Style::default().fg(Theme::text())),
+    ]));
+    lines.push(Line::from(vec![
+        Span::styled("  q", Style::default().fg(Theme::selection_marker()).add_modifier(Modifier::BOLD)),
+        Span::styled("  Quit application", Style::default().fg(Theme::text())),
+    ]));
+    lines.push(Line::from(vec![
+        Span::styled("  ?", Style::default().fg(Theme::selection_marker()).add_modifier(Modifier::BOLD)),
+        Span::styled("  Toggle this help screen", Style::default().fg(Theme::text())),
+    ]));
+    lines.push(Line::from(""));
+    
+    lines.push(Line::from(Span::styled(
+        "Navigation",
+        Style::default().fg(Theme::highlight()).add_modifier(Modifier::BOLD),
+    )));
+    lines.push(Line::from(vec![
+        Span::styled("  Tab", Style::default().fg(Theme::selection_marker()).add_modifier(Modifier::BOLD)),
+        Span::styled("      Switch between tab bar and content", Style::default().fg(Theme::text())),
+    ]));
+    lines.push(Line::from(vec![
+        Span::styled("  ←/→", Style::default().fg(Theme::selection_marker()).add_modifier(Modifier::BOLD)),
+        Span::styled("      Navigate tabs (when focused on tab bar)", Style::default().fg(Theme::text())),
+    ]));
+    lines.push(Line::from(vec![
+        Span::styled("  ↑/↓", Style::default().fg(Theme::selection_marker()).add_modifier(Modifier::BOLD)),
+        Span::styled("      Move selection up/down in lists", Style::default().fg(Theme::text())),
+    ]));
+    lines.push(Line::from(vec![
+        Span::styled("  Enter", Style::default().fg(Theme::selection_marker()).add_modifier(Modifier::BOLD)),
+        Span::styled("     Open/select item", Style::default().fg(Theme::text())),
+    ]));
+    lines.push(Line::from(vec![
+        Span::styled("  Esc", Style::default().fg(Theme::selection_marker()).add_modifier(Modifier::BOLD)),
+        Span::styled("       Go back to previous view", Style::default().fg(Theme::text())),
+    ]));
+    lines.push(Line::from(""));
+    
+    lines.push(Line::from(Span::styled(
+        "Task Management",
+        Style::default().fg(Theme::highlight()).add_modifier(Modifier::BOLD),
+    )));
+    lines.push(Line::from(vec![
+        Span::styled("  Space", Style::default().fg(Theme::selection_marker()).add_modifier(Modifier::BOLD)),
+        Span::styled("     Start/End selected task", Style::default().fg(Theme::text())),
+    ]));
+    lines.push(Line::from(vec![
+        Span::styled("  s", Style::default().fg(Theme::selection_marker()).add_modifier(Modifier::BOLD)),
+        Span::styled("         Stop running task", Style::default().fg(Theme::text())),
+    ]));
+    lines.push(Line::from(vec![
+        Span::styled("  e", Style::default().fg(Theme::selection_marker()).add_modifier(Modifier::BOLD)),
+        Span::styled("         Edit task label/category", Style::default().fg(Theme::text())),
+    ]));
+    lines.push(Line::from(vec![
+        Span::styled("  n", Style::default().fg(Theme::selection_marker()).add_modifier(Modifier::BOLD)),
+        Span::styled("         Create new task (in Projects/Categories)", Style::default().fg(Theme::text())),
+    ]));
+    lines.push(Line::from(vec![
+        Span::styled("  g", Style::default().fg(Theme::selection_marker()).add_modifier(Modifier::BOLD)),
+        Span::styled("         Jump to project (from task detail)", Style::default().fg(Theme::text())),
+    ]));
+    lines.push(Line::from(vec![
+        Span::styled("  r", Style::default().fg(Theme::selection_marker()).add_modifier(Modifier::BOLD)),
+        Span::styled("         Refresh current view", Style::default().fg(Theme::text())),
+    ]));
+    lines.push(Line::from(""));
+    
+    lines.push(Line::from(Span::styled(
+        "Special Views",
+        Style::default().fg(Theme::highlight()).add_modifier(Modifier::BOLD),
+    )));
+    lines.push(Line::from(vec![
+        Span::styled("  Shift+Tab", Style::default().fg(Theme::selection_marker()).add_modifier(Modifier::BOLD)),
+        Span::styled("  Toggle time range in Worked view (today/week)", Style::default().fg(Theme::text())),
+    ]));
+    lines.push(Line::from(""));
+    
+    lines.push(Line::from(Span::styled(
+        "Tips",
+        Style::default().fg(Theme::accent()).add_modifier(Modifier::BOLD),
+    )));
+    lines.push(Line::from(vec![
+        Span::styled("  •", Style::default().fg(Theme::dim())),
+        Span::styled("  Running tasks show elapsed time in the footer", Style::default().fg(Theme::text())),
+    ]));
+    lines.push(Line::from(vec![
+        Span::styled("  •", Style::default().fg(Theme::dim())),
+        Span::styled("  Categories can have custom colors (hex format: #RRGGBB)", Style::default().fg(Theme::text())),
+    ]));
+    lines.push(Line::from(vec![
+        Span::styled("  •", Style::default().fg(Theme::dim())),
+        Span::styled("  Use CLI commands for batch operations (see README)", Style::default().fg(Theme::text())),
+    ]));
+    
+    Text::from(lines)
+}
+
+fn render_confirm_popup(frame: &mut Frame, popup: &crate::app::ConfirmPopup) {
+    let area = centered_rect(60, 30, frame.area());
+    frame.render_widget(Clear, area);
+
+    let mut lines = Vec::new();
+    lines.push(Line::from(Span::styled(
+        "Confirm Action",
+        Style::default()
+            .fg(Theme::accent())
+            .add_modifier(Modifier::BOLD),
+    )));
+    lines.push(Line::from(""));
+    lines.push(Line::from(Span::styled(
+        &popup.message,
+        Style::default().fg(Theme::text()),
+    )));
+    lines.push(Line::from(""));
+    lines.push(Line::from(vec![
+        Span::styled("Press ", Style::default().fg(Theme::dim())),
+        Span::styled("Y", Style::default().fg(Theme::highlight()).add_modifier(Modifier::BOLD)),
+        Span::styled(" to confirm or ", Style::default().fg(Theme::dim())),
+        Span::styled("N", Style::default().fg(Theme::highlight()).add_modifier(Modifier::BOLD)),
+        Span::styled("/", Style::default().fg(Theme::dim())),
+        Span::styled("ESC", Style::default().fg(Theme::highlight()).add_modifier(Modifier::BOLD)),
+        Span::styled(" to cancel", Style::default().fg(Theme::dim())),
+    ]));
+
+    let popup_widget = Paragraph::new(Text::from(lines))
+        .alignment(Alignment::Center)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_type(BorderType::Rounded)
+                .style(Style::default().fg(Theme::secondary()))
+                .title(" Confirm "),
+        );
+    frame.render_widget(popup_widget, area);
 }
