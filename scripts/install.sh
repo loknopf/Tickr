@@ -73,6 +73,9 @@ case "$ARCH" in
     x86_64|amd64)
         TARGET_ARCH="x86_64"
         ;;
+    aarch64|arm64)
+        TARGET_ARCH="aarch64"
+        ;;
     *)
         echo "Unsupported CPU architecture: $ARCH" >&2
         exit 1
