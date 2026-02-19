@@ -11,6 +11,7 @@ use super::{AppEvent, AppView, FocusMode, ProjectSummary, TABS, TimelineRange, W
 /// The top-level application state.
 pub struct App {
     pub running: bool,
+    pub pending_update: bool,
     pub running_tickr: Option<TickrId>,
     pub db: Connection,
     pub view: AppView,
@@ -40,6 +41,7 @@ pub struct App {
     pub new_category_popup: Option<NewCategoryPopup>,
     pub new_tickr_popup: Option<NewTickrPopup>,
     pub delete_tickr_popup: Option<DeleteTickrPopup>,
+    pub update_popup: Option<UpdatePopup>,
 }
 
 #[derive(Clone, Debug)]
@@ -67,6 +69,11 @@ pub struct EditTickrPopup {
 pub struct DeleteTickrPopup {
     pub tickr_id: TickrId,
     pub label: String,
+}
+
+#[derive(Clone, Debug)]
+pub struct UpdatePopup {
+    pub new_version: String,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -147,6 +154,7 @@ impl App {
         };
         let mut app = Self {
             running: true,
+            pending_update: false,
             running_tickr,
             db,
             view: AppView::Dashboard,
@@ -176,6 +184,7 @@ impl App {
             new_category_popup: None,
             new_tickr_popup: None,
             delete_tickr_popup: None,
+            update_popup: None,
         };
 
         // Initialize categories and project summaries
@@ -202,6 +211,10 @@ impl App {
     }
 
     fn handle_key(&mut self, key: KeyCode) {
+        if self.update_popup.is_some() {
+            self.handle_update_key(key);
+            return;
+        }
         if self.delete_tickr_popup.is_some() {
             self.handle_delete_tickr_key(key);
             return;
@@ -423,6 +436,17 @@ impl App {
                 self.clear_status();
             }
             KeyCode::Enter | KeyCode::Char('y') => self.apply_delete_tickr_popup(),
+            _ => {}
+        }
+    }
+
+    fn handle_update_key(&mut self, key: KeyCode) {
+        match key {
+            KeyCode::Esc | KeyCode::Char('n') => {
+                self.update_popup = None;
+                self.clear_status();
+            }
+            KeyCode::Enter | KeyCode::Char('y') => self.apply_update_popup(),
             _ => {}
         }
     }
@@ -1424,6 +1448,16 @@ impl App {
                 self.status = Some(format!("Failed to load project summaries: {err}"));
             }
         }
+    }
+
+    pub fn show_update_popup(&mut self, new_version: String) {
+        self.update_popup = Some(UpdatePopup { new_version });
+    }
+
+    fn apply_update_popup(&mut self) {
+        self.update_popup = None;
+        self.pending_update = true;
+        self.running = false;
     }
 }
 

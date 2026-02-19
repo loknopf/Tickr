@@ -6,6 +6,7 @@ mod event;
 mod tui;
 mod types;
 mod ui;
+mod updater;
 
 use anyhow::Result;
 use clap::Parser;
@@ -19,11 +20,23 @@ fn main() -> Result<()> {
     }
 
     let mut app = app::App::new(conn);
+    
+    // Check for updates at startup
+    if let Ok(Some(new_version)) = updater::check_for_updates() {
+        app.show_update_popup(new_version);
+    }
+    
     let mut terminal = tui::init()?;
     let mut event_handler = event::EventHandler::new();
     let result = event_handler.run(&mut app, &mut terminal);
 
     tui::restore()?;
+
+    // Perform update after TUI is restored if user accepted
+    if app.pending_update {
+        println!("Starting update process...");
+        updater::perform_update()?;
+    }
 
     result
 }

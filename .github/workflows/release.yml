@@ -18,13 +18,10 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            asset_ext: tar.gz
           - os: macos-latest
             target: x86_64-apple-darwin
-            asset_ext: tar.gz
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            asset_ext: zip
 
     steps:
       - name: Checkout
@@ -44,18 +41,18 @@ jobs:
           set -euo pipefail
           mkdir -p dist
           VERSION="${GITHUB_REF_NAME#v}"
-          ASSET="tickr-${VERSION}-${{ matrix.target }}.${{ matrix.asset_ext }}"
+          ASSET="tickr-${VERSION}-${{ matrix.target }}.tar.gz"
           tar -C "target/${{ matrix.target }}/release" -czf "dist/${ASSET}" tickr
 
       - name: Package (Windows)
         if: runner.os == 'Windows'
-        shell: pwsh
+        shell: bash
         run: |
-          New-Item -ItemType Directory -Force -Path dist | Out-Null
-          $version = "$env:GITHUB_REF_NAME".TrimStart('v')
-          $asset = "tickr-$version-${{ matrix.target }}.${{ matrix.asset_ext }}"
-          $source = "target/${{ matrix.target }}/release/tickr.exe"
-          Compress-Archive -Path $source -DestinationPath (Join-Path dist $asset)
+          mkdir -p dist
+          VERSION="${GITHUB_REF_NAME#v}"
+          ASSET="tickr-${VERSION}-${{ matrix.target }}.tar.gz"
+          cd "target/${{ matrix.target }}/release"
+          tar -czf "../../../dist/${ASSET}" tickr.exe
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2

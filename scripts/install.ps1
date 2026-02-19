@@ -21,7 +21,7 @@ $apiUrl = if ($Version -eq "latest") {
 $release = Invoke-RestMethod -Uri $apiUrl -Headers @{ "Accept" = "application/vnd.github+json" }
 $tag = $release.tag_name
 $ver = $tag.TrimStart("v")
-$assetName = "tickr-$ver-x86_64-pc-windows-msvc.zip"
+$assetName = "tickr-$ver-x86_64-pc-windows-msvc.tar.gz"
 
 $asset = $release.assets | Where-Object { $_.name -eq $assetName } | Select-Object -First 1
 if (-not $asset) {
@@ -34,9 +34,13 @@ $tmpDir = Join-Path $env:TEMP ("tickr-" + [Guid]::NewGuid().ToString("N"))
 New-Item -ItemType Directory -Force -Path $tmpDir | Out-Null
 
 try {
-    $zipPath = Join-Path $tmpDir $assetName
-    Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $zipPath
-    Expand-Archive -Path $zipPath -DestinationPath $tmpDir -Force
+    $tarPath = Join-Path $tmpDir $assetName
+    Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $tarPath
+    
+    # Extract using tar (available on Windows 10+)
+    Push-Location $tmpDir
+    tar -xzf $assetName
+    Pop-Location
 
     $exePath = Join-Path $tmpDir "tickr.exe"
     if (-not (Test-Path $exePath)) {

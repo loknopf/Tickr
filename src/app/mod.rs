@@ -4,7 +4,7 @@ use crossterm::event::KeyCode;
 
 pub use state::{
     App, CategoryField, DeleteTickrPopup, EditTickrPopup, NewCategoryPopup, NewTickrField,
-    NewTickrPopup,
+    NewTickrPopup, UpdatePopup,
 };
 
 /// Possible input events the app reacts to.

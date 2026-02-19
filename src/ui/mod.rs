@@ -124,6 +124,9 @@ pub fn draw(frame: &mut Frame, app: &App) {
     if let Some(popup) = &app.delete_tickr_popup {
         render_delete_tickr_popup(frame, popup);
     }
+    if let Some(popup) = &app.update_popup {
+        render_update_popup(frame, popup);
+    }
 }
 
 fn render_edit_popup(frame: &mut Frame, popup: &crate::app::EditTickrPopup) {
@@ -437,6 +440,59 @@ fn render_delete_tickr_popup(frame: &mut Frame, popup: &crate::app::DeleteTickrP
                 .border_type(BorderType::Rounded)
                 .style(Style::default().fg(Theme::danger()))
                 .title(" Delete "),
+        );
+    frame.render_widget(popup_widget, area);
+}
+
+fn render_update_popup(frame: &mut Frame, popup: &crate::app::UpdatePopup) {
+    let area = centered_rect(60, 35, frame.area());
+    frame.render_widget(Clear, area);
+
+    let mut lines = Vec::new();
+    lines.push(Line::from(Span::styled(
+        "Update Available",
+        Style::default()
+            .fg(Theme::success())
+            .add_modifier(Modifier::BOLD),
+    )));
+    lines.push(Line::from(""));
+    lines.push(Line::from(vec![
+        Span::styled("New version: ", Style::default().fg(Theme::dim())),
+        Span::styled(
+            popup.new_version.as_str(),
+            Style::default()
+                .fg(Theme::active())
+                .add_modifier(Modifier::BOLD),
+        ),
+    ]));
+    lines.push(Line::from(""));
+    lines.push(Line::from(Span::styled(
+        "Would you like to update now?",
+        Style::default().fg(Theme::text()),
+    )));
+    lines.push(Line::from(""));
+    lines.push(Line::from(Span::styled(
+        "The application will download and install the update,",
+        Style::default().fg(Theme::dim()),
+    )));
+    lines.push(Line::from(Span::styled(
+        "then exit. Please restart after the update completes.",
+        Style::default().fg(Theme::dim()),
+    )));
+    lines.push(Line::from(""));
+    lines.push(Line::from(Span::styled(
+        "Enter/Y: update  Esc/N: skip",
+        Style::default().fg(Theme::dim()),
+    )));
+
+    let popup_widget = Paragraph::new(Text::from(lines))
+        .alignment(Alignment::Left)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_type(BorderType::Rounded)
+                .style(Style::default().fg(Theme::success()))
+                .title(" Update "),
         );
     frame.render_widget(popup_widget, area);
 }
